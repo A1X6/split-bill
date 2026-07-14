@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -77,12 +78,15 @@ export default function AppNav({ userName, userEmail, userImage }: AppNavProps) 
               }
             />
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="truncate font-medium">{userName}</div>
-                <div className="truncate text-xs font-normal text-muted-foreground">
-                  {userEmail}
-                </div>
-              </DropdownMenuLabel>
+              {/* GroupLabel needs a Group ancestor — Base UI throws without one. */}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>
+                  <div className="truncate font-medium">{userName}</div>
+                  <div className="truncate text-xs font-normal text-muted-foreground">
+                    {userEmail}
+                  </div>
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut />
