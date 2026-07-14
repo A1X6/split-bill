@@ -1,17 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { User, Item, UserTotal } from "./types";
+import { User, Item, UserTotal, ScanReceiptResult, ScannedTax } from "./types";
 import UserManagement from "./components/UserManagement";
 import ItemForm from "./components/ItemForm";
 import ItemList from "./components/ItemList";
 import Results from "./components/Results";
+import ReceiptScanner from "./components/ReceiptScanner";
+import ScannedItemsReview from "./components/ScannedItemsReview";
 
 export default function Home() {
   const [users, setUsers] = useState<User[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [taxRate, setTaxRate] = useState("");
   const [taxError, setTaxError] = useState(false);
+  const [scanResult, setScanResult] = useState<ScanReceiptResult | null>(null);
+  const [detectedTaxes, setDetectedTaxes] = useState<ScannedTax[]>([]);
 
   const handleAddUser = (user: User) => {
     setUsers([...users, user]);
@@ -45,6 +49,29 @@ export default function Home() {
 
   const handleRemoveItem = (itemId: string) => {
     setItems(items.filter((item) => item.id !== itemId));
+  };
+
+  const handleScanComplete = (result: ScanReceiptResult) => {
+    setScanResult(result);
+    if (result.taxes.length > 0) {
+      setDetectedTaxes(result.taxes);
+      setTaxRate(String(result.combinedTaxRate));
+      setTaxError(false);
+    }
+  };
+
+  const handleAddScannedItems = (
+    scanned: { name: string; cost: number; quantity: number; users: string[] }[]
+  ) => {
+    const timestamp = Date.now();
+    setItems([
+      ...items,
+      ...scanned.map((item, index) => ({
+        id: `${timestamp}-${index}`,
+        ...item,
+      })),
+    ]);
+    setScanResult(null);
   };
 
   const updateTaxRate = (value: string) => {
@@ -103,6 +130,8 @@ export default function Home() {
     setItems([]);
     setTaxRate("");
     setTaxError(false);
+    setScanResult(null);
+    setDetectedTaxes([]);
   };
 
   const userTotals = calculateUserTotals();
@@ -129,6 +158,38 @@ export default function Home() {
                 onAddUser={handleAddUser}
                 onRemoveUser={handleRemoveUser}
               />
+            </div>
+          </div>
+
+          {/* Receipt Scanner Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+                <svg
+                  className="w-5 h-5 text-blue-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 4.5v15m7.5-7.5h-15"
+                  />
+                </svg>
+                Scan Receipt with AI
+              </h2>
+              {scanResult ? (
+                <ScannedItemsReview
+                  scan={scanResult}
+                  users={users}
+                  onAddItems={handleAddScannedItems}
+                  onDismiss={() => setScanResult(null)}
+                />
+              ) : (
+                <ReceiptScanner onScanComplete={handleScanComplete} />
+              )}
             </div>
           </div>
 
@@ -169,6 +230,31 @@ export default function Home() {
                   %
                 </span>
               </div>
+              {detectedTaxes.length > 0 && (
+                <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">
+                  Detected from receipt:{" "}
+                  {detectedTaxes
+                    .map((tax) => `${tax.name} ${tax.rate}%`)
+                    .join(" × ")}
+                  {detectedTaxes.length > 1 && (
+                    <>
+                      {" "}
+                      ={" "}
+                      <span className="font-medium text-gray-700 dark:text-gray-200">
+                        {(
+                          (detectedTaxes.reduce(
+                            (acc, tax) => acc * (1 + tax.rate / 100),
+                            1
+                          ) -
+                            1) *
+                          100
+                        ).toFixed(2)}
+                        % compounded
+                      </span>
+                    </>
+                  )}
+                </p>
+              )}
               {taxError && (
                 <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
                   <svg
