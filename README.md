@@ -56,7 +56,14 @@ Google sign-in and receipt scanning each degrade gracefully: leave their variabl
 
 ### 3. Database
 
-Create a free Postgres database at [neon.tech](https://neon.tech) (or add the Neon integration to your Vercel project), copy the connection string into `DATABASE_URL`, then create the tables:
+Any Postgres works. Create a free database at [neon.tech](https://neon.tech) (or add the Neon integration to your Vercel project) and copy its connection string into `DATABASE_URL` — or point `DATABASE_URL` at a local Postgres instead:
+
+```bash
+docker run -d --name splitbill-pg -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:17
+# DATABASE_URL=postgresql://postgres:postgres@localhost:55432/postgres
+```
+
+The app picks its driver from the URL: a `*.neon.tech` host uses Neon's HTTP driver, anything else uses the standard `pg` driver. Create the tables:
 
 ```bash
 npm run db:migrate
