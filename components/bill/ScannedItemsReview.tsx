@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { ScanReceiptResult, User } from "../types";
+import { Plus, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScanReceiptResult, Participant } from "@/lib/types";
 
 interface ReviewRow {
   id: string;
@@ -11,7 +14,7 @@ interface ReviewRow {
 
 interface ScannedItemsReviewProps {
   scan: ScanReceiptResult;
-  users: User[];
+  users: Participant[];
   onAddItems: (items: { name: string; cost: number; quantity: number; users: string[] }[]) => void;
   onDismiss: () => void;
 }
@@ -123,91 +126,101 @@ export default function ScannedItemsReview({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Found {scan.items.length} item{scan.items.length === 1 ? "" : "s"}
-          {scan.total !== null && <> · receipt total {scan.currency ?? "$"}{scan.total.toFixed(2)}</>}
-          {" "}· read by <span className="font-mono">{scan.model.replace(":free", "")}</span>
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Found {scan.items.length} item{scan.items.length === 1 ? "" : "s"}
+        {scan.total !== null && (
+          <>
+            {" "}
+            · receipt total{" "}
+            <span className="font-mono tabular-nums">
+              {scan.currency ?? "$"}
+              {scan.total.toFixed(2)}
+            </span>
+          </>
+        )}{" "}
+        · read by{" "}
+        <span className="font-mono">{scan.model.replace(":free", "")}</span>
+      </p>
 
       <div className="space-y-3">
         {rows.map((row) => (
           <div
             key={row.id}
-            className="p-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/40 space-y-3"
+            className="space-y-3 rounded-xl border bg-muted/40 p-4"
           >
-            <div className="flex gap-2 items-start">
-              <div className="grid gap-2 sm:grid-cols-[1fr_110px_90px] flex-grow">
-                <input
+            <div className="flex items-start gap-2">
+              <div className="grid flex-grow gap-2 sm:grid-cols-[1fr_110px_80px]">
+                <Input
                   type="text"
                   value={row.name}
                   onChange={(e) => updateRow(row.id, { name: e.target.value })}
                   placeholder="Item name"
-                  className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  aria-label="Item name"
                 />
-                <input
+                <Input
                   type="number"
                   value={row.cost}
                   onChange={(e) => updateRow(row.id, { cost: e.target.value })}
                   step="0.01"
                   min="0"
                   placeholder="Cost"
-                  className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  aria-label="Cost"
+                  className="font-mono tabular-nums"
                 />
-                <input
+                <Input
                   type="number"
                   value={row.quantity}
-                  onChange={(e) => updateRow(row.id, { quantity: e.target.value })}
+                  onChange={(e) =>
+                    updateRow(row.id, { quantity: e.target.value })
+                  }
                   min="1"
                   placeholder="Qty"
-                  className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  aria-label="Quantity"
+                  className="font-mono tabular-nums"
                 />
               </div>
-              <button
+              <Button
                 type="button"
-                onClick={() => removeRow(row.id)}
-                className="p-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                variant="ghost"
+                size="icon"
                 aria-label="Remove item"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() => removeRow(row.id)}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
+                <Trash2 />
+              </Button>
             </div>
 
-            <div className="flex flex-wrap gap-2 items-center">
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">For:</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">
+                For:
+              </span>
               {users.map((user) => (
-                <button
+                <Button
                   key={user.id}
                   type="button"
+                  size="xs"
+                  variant={row.users.includes(user.id) ? "default" : "outline"}
+                  aria-pressed={row.users.includes(user.id)}
+                  className="rounded-full"
                   onClick={() => toggleUser(row.id, user.id)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                    row.users.includes(user.id)
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-                  }`}
                 >
                   {user.name}
-                </button>
+                </Button>
               ))}
               {users.length > 1 && (
-                <button
+                <Button
                   type="button"
+                  size="xs"
+                  variant="ghost"
+                  className="rounded-full border border-dashed"
                   onClick={() => toggleEveryone(row.id)}
-                  className="px-3 py-1 rounded-full text-xs font-medium border border-dashed border-gray-400 dark:border-gray-500 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-500 transition-colors"
                 >
                   Everyone
-                </button>
+                </Button>
               )}
               {users.length === 0 && (
-                <span className="text-xs text-amber-600 dark:text-amber-400">
+                <span className="text-xs text-muted-foreground">
                   Add people above to assign this item
                 </span>
               )}
@@ -216,31 +229,30 @@ export default function ScannedItemsReview({
         ))}
       </div>
 
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        className="w-full border border-dashed text-muted-foreground"
         onClick={addRow}
-        className="w-full px-4 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors"
       >
-        + Add another item
-      </button>
+        <Plus data-icon="inline-start" />
+        Add another item
+      </Button>
 
-      {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex gap-3">
-        <button
+        <Button
           type="button"
+          size="lg"
+          className="flex-1"
           onClick={handleAddAll}
-          className="flex-1 px-6 py-3 text-white font-medium bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-lg shadow-sm transition-all"
         >
           Add {rows.length} item{rows.length === 1 ? "" : "s"} to bill
-        </button>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-        >
+        </Button>
+        <Button type="button" size="lg" variant="outline" onClick={onDismiss}>
           Discard
-        </button>
+        </Button>
       </div>
     </div>
   );

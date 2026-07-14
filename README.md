@@ -1,77 +1,105 @@
 # Split Bill
 
-A modern web application built with Next.js that helps you easily split bills and expenses among friends.
+Split any bill in seconds. Snap a photo of the receipt, assign items to the people who had them, and everyone knows exactly what they owe — tax included.
+
+A full Next.js app with accounts, a marketing site, and saved bill history in Postgres.
 
 ## Features
 
-- 🧑‍🤝‍🧑 Add and manage multiple users
-- 📸 **Scan receipts with AI** — upload a photo and the items, taxes, and totals are extracted automatically (free OpenRouter vision models)
-- 🧮 Compound tax detection — multiple taxes (e.g. VAT 14% + service 12%) are combined multiplicatively (1.14 × 1.12 → 27.68%)
-- ✏️ Review, edit, and extend AI-scanned items before adding them to the bill
-- 💰 Add items manually with cost and quantity
-- 🔄 Split items between selected users
-- 📊 Calculate individual shares automatically
-- 💵 Support for tax rate calculation
-- 🌓 Dark mode support
-- 📱 Fully responsive design
+- 🔐 **Accounts** — email/password and Sign in with Google (Better Auth). The app is private to logged-in users.
+- 💾 **Saved bill history** — every bill autosaves to Postgres; reopen, edit, or delete any past bill.
+- 📸 **Scan receipts with AI** — photograph a receipt and the items, quantities, and taxes are extracted automatically (free OpenRouter vision models).
+- 🧮 **Compound tax detection** — several taxes (e.g. VAT 14% + service 12%) combine multiplicatively (1.14 × 1.12 → 27.68%).
+- 🧑‍🤝‍🧑 **Per-item splits** — shared plates split between exactly who shared them; tax lands in proportion to what each person ordered.
+- ✏️ Review and edit AI-scanned items before they hit the bill.
+- 🌓 Light and dark themes with a toggle.
+- 📱 Responsive, from phone to desktop.
+
+Friends on a bill are just names — only you need an account.
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 with App Router (Turbopack)
+- **Framework**: Next.js 16, App Router (Turbopack)
+- **Auth**: Better Auth (email/password + Google OAuth)
+- **Database**: Postgres (Neon) via Drizzle ORM
+- **UI**: Tailwind CSS 4 + shadcn/ui, Bricolage Grotesque + Geist
 - **AI**: OpenRouter free vision models (Gemma 4, Nemotron Nano VL)
-- **Styling**: Tailwind CSS 4
-- **Fonts**: Geist Sans & Geist Mono
 - **Language**: TypeScript
 
 ## Getting Started
 
-1. Clone the repository:
+### 1. Install
 
 ```bash
 git clone https://github.com/yourusername/split-bill.git
 cd split-bill
-```
-
-2. Install dependencies:
-
-```bash
 npm install
 ```
 
-3. Set up the AI receipt scanner (optional but recommended):
+### 2. Environment
 
-   - Create a free API key at [openrouter.ai/keys](https://openrouter.ai/keys)
-   - Put it in `.env.local`:
+Copy `.env.example` to `.env.local` and fill it in:
 
 ```bash
-OPENROUTER_API_KEY=sk-or-...
+cp .env.example .env.local
 ```
 
-   The scanner uses free models only (`google/gemma-4-31b-it:free` first, with automatic fallbacks to `google/gemma-4-26b-a4b-it:free` and `nvidia/nemotron-nano-12b-v2-vl:free`). You can force a specific model with `OPENROUTER_MODEL`.
+| Variable | Required | Where it comes from |
+| --- | --- | --- |
+| `DATABASE_URL` | yes | A Postgres connection string — see below |
+| `BETTER_AUTH_SECRET` | yes | Generate one: `npx @better-auth/cli secret` |
+| `BETTER_AUTH_URL` | yes | `http://localhost:3000` in dev; your deployed URL in production |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | no | Enables the "Continue with Google" button — see below |
+| `OPENROUTER_API_KEY` | no | Enables AI receipt scanning — free key at [openrouter.ai/keys](https://openrouter.ai/keys) |
 
-4. Run the development server:
+Google sign-in and receipt scanning each degrade gracefully: leave their variables unset and the rest of the app still works.
+
+### 3. Database
+
+Any Postgres works. Create a free database at [neon.tech](https://neon.tech) (or add the Neon integration to your Vercel project) and copy its connection string into `DATABASE_URL` — or point `DATABASE_URL` at a local Postgres instead:
+
+```bash
+docker run -d --name splitbill-pg -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:17
+# DATABASE_URL=postgresql://postgres:postgres@localhost:55432/postgres
+```
+
+The app picks its driver from the URL: a `*.neon.tech` host uses Neon's HTTP driver, anything else uses the standard `pg` driver. Create the tables:
+
+```bash
+npm run db:migrate
+```
+
+Other database commands: `npm run db:generate` (new migration from schema changes), `npm run db:push` (push schema without a migration), `npm run db:studio` (browse data).
+
+### 4. Google sign-in (optional)
+
+In the [Google Cloud Console](https://console.cloud.google.com):
+
+1. **APIs & Services → OAuth consent screen** — External; add yourself as a test user while the app is unverified.
+2. **Credentials → Create credentials → OAuth client ID → Web application**.
+3. Authorized redirect URI: `http://localhost:3000/api/auth/callback/google` (and the same path on your production domain).
+4. Copy the client ID and secret into `.env.local`.
+
+### 5. Run
 
 ```bash
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
 ## How to Use
 
-1. **Add Users**: Start by adding the people who are splitting the bill.
-2. **Scan a Receipt** (Optional): Take a photo or upload a receipt image. The AI extracts every item and any taxes. Review the items, edit names/prices/quantities, add missing ones, assign each item to people, then add them all to the bill. Detected taxes fill the tax rate automatically — multiple taxes are compounded multiplicatively.
-3. **Set Tax Rate** (Optional): Or enter the tax rate manually.
-4. **Add Items**: Enter item details manually including:
-   - Item name
-   - Cost
-   - Quantity
-   - Select users to split between
-5. **View Results**: See the breakdown of what each person owes, including:
-   - Individual items
-   - Subtotals
-   - Tax amounts
-   - Final totals
+1. **Sign up** — with email and password, or with Google.
+2. **New bill** — from your dashboard. It saves as you go.
+3. **Add the people** splitting it (just their names).
+4. **Scan the receipt** — or type items in by hand. Review what the AI read, fix anything it misread, and assign each item to the people who had it.
+5. **Set the tax rate** — scanned receipts fill this in automatically.
+6. **See everyone's share** — each person's items, subtotal, tax, and total.
+
+## Deploying
+
+Deploys to Vercel as-is. Set `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (your production URL), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `OPENROUTER_API_KEY` in the project's environment variables, add your production callback URL to the Google OAuth client, and run `npm run db:migrate` against the production database.
 
 ## Contributing
 

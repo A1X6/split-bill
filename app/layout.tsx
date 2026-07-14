@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
@@ -12,10 +14,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-display",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
-  title: "Split Bill - Split Expenses Effortlessly",
+  title: {
+    default: "Split Bill — Split any bill in seconds",
+    template: "%s · Split Bill",
+  },
   description:
-    "A modern web app to easily split bills and expenses among friends. Calculate individual shares, add tax rates, and manage group expenses with ease.",
+    "Snap a photo of the receipt, assign items to friends, and everyone knows exactly what they owe — tax included. Free to use.",
+  openGraph: {
+    title: "Split Bill",
+    description:
+      "Snap a photo of the receipt, assign items to friends, and everyone knows exactly what they owe.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -24,11 +40,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} antialiased`}
       >
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

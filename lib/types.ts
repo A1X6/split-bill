@@ -1,14 +1,16 @@
-export interface User {
+/** A person on a bill — an ad-hoc display name, not a registered account. */
+export interface Participant {
   id: string;
   name: string;
 }
 
-export interface Item {
+/** A line item on a bill. `users` holds the participant ids sharing the item. */
+export interface BillItem {
   id: string;
   name: string;
   cost: number;
   quantity: number;
-  users: string[]; // Array of user IDs
+  users: string[];
 }
 
 export interface UserTotal {
