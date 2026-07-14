@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/lib/auth-client";
+import { initialsOf } from "@/lib/initials";
 import { ThemeToggle } from "./theme-toggle";
 
 interface AppNavProps {
@@ -31,13 +32,7 @@ export default function AppNav({
 }: AppNavProps) {
   const router = useRouter();
 
-  const initials = userName
-    .split(" ")
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const initials = initialsOf(userName);
 
   const handleSignOut = async () => {
     await signOut({
