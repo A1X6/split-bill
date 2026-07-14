@@ -1,19 +1,23 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { PaymentMethod } from "@/lib/db/schema";
 import PasswordForm from "./password-form";
+import PaymentMethods from "./payment-methods";
 import ProfileForm from "./profile-form";
 
 interface ProfileTabsProps {
   initialName: string;
   initialUsername: string | null;
   initialImage: string | null;
+  methods: PaymentMethod[];
 }
 
 export default function ProfileTabs({
   initialName,
   initialUsername,
   initialImage,
+  methods,
 }: ProfileTabsProps) {
   return (
     <Tabs defaultValue="profile" className="w-full">
@@ -36,9 +40,7 @@ export default function ProfileTabs({
       </TabsContent>
 
       <TabsContent value="payment">
-        <p className="text-sm text-muted-foreground">
-          Payment methods are coming soon.
-        </p>
+        <PaymentMethods methods={methods} />
       </TabsContent>
     </Tabs>
   );

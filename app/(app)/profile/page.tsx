@@ -1,4 +1,5 @@
 import ProfileTabs from "@/components/profile/profile-tabs";
+import { listPaymentMethods } from "@/lib/payments";
 import { requireUser } from "@/lib/session";
 
 export const metadata = {
@@ -7,6 +8,7 @@ export const metadata = {
 
 export default async function ProfilePage() {
   const user = await requireUser();
+  const methods = await listPaymentMethods(user.id);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
@@ -17,6 +19,7 @@ export default async function ProfilePage() {
         initialName={user.name}
         initialUsername={user.username ?? null}
         initialImage={user.image ?? null}
+        methods={methods}
       />
     </div>
   );
