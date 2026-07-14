@@ -1,8 +1,8 @@
-import { User, Item } from "../types";
+import { Participant, BillItem } from "@/lib/types";
 
 interface ItemListProps {
-  items: Item[];
-  users: User[];
+  items: BillItem[];
+  users: Participant[];
   onRemoveItem: (itemId: string) => void;
 }
 

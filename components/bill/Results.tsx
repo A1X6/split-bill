@@ -1,7 +1,7 @@
-import { User, UserTotal } from "../types";
+import { Participant, UserTotal } from "@/lib/types";
 
 interface ResultsProps {
-  users: User[];
+  users: Participant[];
   userTotals: Record<string, UserTotal>;
   taxRate: string;
   overallTotal: number;

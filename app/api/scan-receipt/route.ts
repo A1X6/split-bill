@@ -1,4 +1,5 @@
-import { ScannedItem, ScannedTax, ScanReceiptResult } from "../../types";
+import { ScannedItem, ScannedTax, ScanReceiptResult } from "@/lib/types";
+import { auth } from "@/lib/auth";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -143,6 +144,11 @@ async function callModel(
 }
 
 export async function POST(request: Request) {
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session) {
+    return jsonError("Sign in to scan receipts.", 401);
+  }
+
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return jsonError(

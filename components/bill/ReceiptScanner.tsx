@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { ScanReceiptResult } from "../types";
-import { compressImage } from "../lib/compressImage";
+import { ScanReceiptResult } from "@/lib/types";
+import { compressImage } from "@/lib/compressImage";
 
 interface ReceiptScannerProps {
   onScanComplete: (result: ScanReceiptResult) => void;

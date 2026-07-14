@@ -1,8 +1,8 @@
-import { User } from "../types";
+import { Participant } from "@/lib/types";
 import { useState } from "react";
 
 interface ItemFormProps {
-  users: User[];
+  users: Participant[];
   onAddItem: (
     name: string,
     cost: number,
@@ -40,7 +40,7 @@ export default function ItemForm({ users, onAddItem }: ItemFormProps) {
     }
 
     if (selectedUsers.length === 0) {
-      setError("Please select at least one user");
+      setError("Please select at least one person");
       return;
     }
 

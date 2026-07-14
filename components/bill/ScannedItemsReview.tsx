@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScanReceiptResult, User } from "../types";
+import { ScanReceiptResult, Participant } from "@/lib/types";
 
 interface ReviewRow {
   id: string;
@@ -11,7 +11,7 @@ interface ReviewRow {
 
 interface ScannedItemsReviewProps {
   scan: ScanReceiptResult;
-  users: User[];
+  users: Participant[];
   onAddItems: (items: { name: string; cost: number; quantity: number; users: string[] }[]) => void;
   onDismiss: () => void;
 }

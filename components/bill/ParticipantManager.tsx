@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { User } from "../types";
+import { Participant } from "@/lib/types";
 
-interface UserManagementProps {
-  users: User[];
-  onAddUser: (user: User) => void;
+interface ParticipantManagerProps {
+  users: Participant[];
+  onAddUser: (user: Participant) => void;
   onRemoveUser: (userId: string) => void;
 }
 
-export default function UserManagement({
+export default function ParticipantManager({
   users,
   onAddUser,
   onRemoveUser,
-}: UserManagementProps) {
+}: ParticipantManagerProps) {
   const [userName, setUserName] = useState("");
   const [error, setError] = useState(false);
 
@@ -34,14 +34,14 @@ export default function UserManagement({
   return (
     <section className="rounded-xl bg-white p-6 dark:bg-gray-800">
       <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
-        Add Users
+        Add People
       </h2>
 
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="flex-grow min-w-[200px]">
           <input
             type="text"
-            placeholder="Enter user name"
+            placeholder="Enter a name"
             value={userName}
             onChange={(e) => {
               setUserName(e.target.value);
@@ -66,14 +66,14 @@ export default function UserManagement({
           onClick={handleAddUser}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
         >
-          Add User
+          Add Person
         </button>
       </div>
 
       {users.length > 0 && (
         <div>
           <h3 className="text-sm font-medium mb-2 text-gray-600 dark:text-gray-300">
-            Added Users:
+            Added:
           </h3>
           <div className="flex flex-wrap gap-2">
             {users.map((user) => (
