@@ -14,7 +14,13 @@ export interface BillItem {
 }
 
 export interface UserTotal {
-  items: { name: string; cost: number; quantity: number }[];
+  items: {
+    name: string;
+    cost: number;
+    quantity: number;
+    /** This person's cut of the line — the line total divided by everyone on it. */
+    share: number;
+  }[];
   subtotal: number;
   tax: number;
   total: number;

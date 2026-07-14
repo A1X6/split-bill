@@ -1,3 +1,4 @@
+import { formatMoney } from "@/lib/currency";
 import { Participant, UserTotal } from "@/lib/types";
 
 interface ResultsProps {
@@ -5,6 +6,7 @@ interface ResultsProps {
   userTotals: Record<string, UserTotal>;
   taxRate: string;
   overallTotal: number;
+  currency: string;
 }
 
 export default function Results({
@@ -12,6 +14,7 @@ export default function Results({
   userTotals,
   taxRate,
   overallTotal,
+  currency,
 }: ResultsProps) {
   return (
     <div className="space-y-6">
@@ -22,7 +25,7 @@ export default function Results({
             TOTAL BILL
           </span>
           <span className="font-mono text-3xl font-bold tabular-nums">
-            ${overallTotal.toFixed(2)}
+            {formatMoney(overallTotal, currency)}
           </span>
         </div>
       </div>
@@ -38,7 +41,7 @@ export default function Results({
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-heading font-semibold">{user.name}</h3>
                 <span className="font-mono text-lg font-bold text-primary tabular-nums">
-                  ${userTotal.total.toFixed(2)}
+                  {formatMoney(userTotal.total, currency)}
                 </span>
               </div>
 
@@ -58,8 +61,10 @@ export default function Results({
                             </span>
                           )}
                         </span>
+                        {/* This person's cut, not the line total — the two
+                            differ whenever an item is shared. */}
                         <span className="font-mono tabular-nums">
-                          ${(item.cost * item.quantity).toFixed(2)}
+                          {formatMoney(item.share, currency)}
                         </span>
                       </div>
                     ))}
@@ -69,7 +74,7 @@ export default function Results({
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subtotal</span>
                       <span className="font-mono tabular-nums">
-                        ${userTotal.subtotal.toFixed(2)}
+                        {formatMoney(userTotal.subtotal, currency)}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -77,7 +82,7 @@ export default function Results({
                         Tax ({taxRate || "0"}%)
                       </span>
                       <span className="font-mono tabular-nums">
-                        ${userTotal.tax.toFixed(2)}
+                        {formatMoney(userTotal.tax, currency)}
                       </span>
                     </div>
                   </div>

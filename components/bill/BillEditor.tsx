@@ -26,7 +26,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Bill } from "@/lib/db/schema/bills";
+import {
+  CURRENCIES,
+  type CurrencyCode,
+  normalizeCurrency,
+  toCurrencyCode,
+} from "@/lib/currency";
 import {
   Participant,
   BillItem,
@@ -122,7 +136,11 @@ export default function BillEditor({ initialBill }: { initialBill: Bill }) {
   const [taxRate, setTaxRate] = useState(
     initialBill.taxRate ? String(initialBill.taxRate) : ""
   );
-  const [currency, setCurrency] = useState<string | null>(initialBill.currency);
+  // Always a valid ISO code. billUpdateSchema rejects anything else, and a
+  // rejected payload takes the whole autosave down with it.
+  const [currency, setCurrency] = useState<CurrencyCode>(
+    toCurrencyCode(initialBill.currency)
+  );
   const [taxError, setTaxError] = useState(false);
   const [scanResult, setScanResult] = useState<ScanReceiptResult | null>(null);
   const [detectedTaxes, setDetectedTaxes] = useState<ScannedTax[]>([]);
@@ -235,8 +253,11 @@ export default function BillEditor({ initialBill }: { initialBill: Bill }) {
 
   const handleScanComplete = (result: ScanReceiptResult) => {
     setScanResult(result);
-    if (result.currency) {
-      setCurrency(result.currency);
+    // The API normalizes too. Belt and braces: a raw symbol reaching this state
+    // would fail validation and stop the bill saving at all.
+    const scanned = normalizeCurrency(result.currency);
+    if (scanned) {
+      setCurrency(scanned);
       markDirty();
     }
     if (result.taxes.length > 0) {
@@ -334,26 +355,55 @@ export default function BillEditor({ initialBill }: { initialBill: Bill }) {
             users={users}
             onAddItems={handleAddScannedItems}
             onDismiss={() => setScanResult(null)}
+            currency={currency}
           />
         ) : (
           <ReceiptScanner onScanComplete={handleScanComplete} />
         )}
       </SectionCard>
 
-      <SectionCard icon={Percent} title="Tax rate">
-        <div className="flex items-center gap-2">
-          <Input
-            type="number"
-            placeholder="0"
-            min="0"
-            step="0.1"
-            value={taxRate}
-            aria-label="Tax rate percentage"
-            aria-invalid={taxError || undefined}
-            onChange={(e) => updateTaxRate(e.target.value)}
-            className="font-mono tabular-nums"
-          />
-          <span className="text-muted-foreground">%</span>
+      <SectionCard icon={Percent} title="Currency & tax">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="bill-currency">Currency</Label>
+            <Select
+              value={currency}
+              onValueChange={(value) => {
+                setCurrency(value as CurrencyCode);
+                markDirty();
+              }}
+            >
+              <SelectTrigger id="bill-currency" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCIES.map((option) => (
+                  <SelectItem key={option.code} value={option.code}>
+                    {option.code} · {option.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bill-tax">Tax rate</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                id="bill-tax"
+                placeholder="0"
+                min="0"
+                step="0.1"
+                value={taxRate}
+                aria-label="Tax rate percentage"
+                aria-invalid={taxError || undefined}
+                onChange={(e) => updateTaxRate(e.target.value)}
+                className="font-mono tabular-nums"
+              />
+              <span className="text-muted-foreground">%</span>
+            </div>
+          </div>
         </div>
         {detectedTaxes.length > 0 && (
           <p className="mt-2 text-sm text-muted-foreground">
@@ -387,8 +437,13 @@ export default function BillEditor({ initialBill }: { initialBill: Bill }) {
       </SectionCard>
 
       <SectionCard icon={ReceiptText} title="Items">
-        <ItemForm users={users} onAddItem={handleAddItem} />
-        <ItemList items={items} users={users} onRemoveItem={handleRemoveItem} />
+        <ItemForm users={users} onAddItem={handleAddItem} currency={currency} />
+        <ItemList
+          items={items}
+          users={users}
+          onRemoveItem={handleRemoveItem}
+          currency={currency}
+        />
       </SectionCard>
 
       {users.length > 0 && items.length > 0 && !taxError && (
@@ -398,6 +453,7 @@ export default function BillEditor({ initialBill }: { initialBill: Bill }) {
             userTotals={userTotals}
             taxRate={taxRate}
             overallTotal={overallTotal}
+            currency={currency}
           />
         </SectionCard>
       )}

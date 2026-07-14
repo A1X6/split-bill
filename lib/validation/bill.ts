@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CURRENCY_CODES } from "../currency";
 
 export const participantSchema = z.object({
   id: z.string().min(1).max(100),
@@ -17,14 +18,30 @@ export const billUpdateSchema = z
   .object({
     title: z.string().max(120),
     taxRate: z.number().min(0).max(100),
-    currency: z.string().max(8).nullable(),
+    // An ISO code, never a symbol. Anything the receipt scanner produces goes
+    // through normalizeCurrency() first — a value that fails here fails the
+    // whole payload, and the bill silently stops autosaving.
+    currency: z.enum(CURRENCY_CODES),
     participants: z.array(participantSchema).max(50),
     items: z.array(itemSchema).max(200),
   })
   .superRefine((data, ctx) => {
+    // The split math keys totals by participant id, so a duplicate id would
+    // quietly merge two people into one.
+    const ids = new Set<string>();
+    data.participants.forEach((participant, index) => {
+      if (ids.has(participant.id)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Two participants share the same id.",
+          path: ["participants", index, "id"],
+        });
+      }
+      ids.add(participant.id);
+    });
+
     // Referential integrity jsonb can't enforce: every assignment must
     // point at a participant that exists on this bill.
-    const ids = new Set(data.participants.map((p) => p.id));
     data.items.forEach((item, index) => {
       if (item.users.some((userId) => !ids.has(userId))) {
         ctx.addIssue({

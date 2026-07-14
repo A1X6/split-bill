@@ -3,6 +3,11 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  currencyPlaceholder,
+  currencyStep,
+  currencySymbol,
+} from "@/lib/currency";
 import { Participant } from "@/lib/types";
 
 interface ItemFormProps {
@@ -13,9 +18,14 @@ interface ItemFormProps {
     quantity: number,
     selectedUsers: string[]
   ) => void;
+  currency: string;
 }
 
-export default function ItemForm({ users, onAddItem }: ItemFormProps) {
+export default function ItemForm({
+  users,
+  onAddItem,
+  currency,
+}: ItemFormProps) {
   const [name, setName] = useState("");
   const [cost, setCost] = useState("");
   const [quantity, setQuantity] = useState("1");
@@ -78,15 +88,15 @@ export default function ItemForm({ users, onAddItem }: ItemFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="item-cost">Cost ($)</Label>
+          <Label htmlFor="item-cost">Cost ({currencySymbol(currency)})</Label>
           <Input
             type="number"
             id="item-cost"
             value={cost}
             onChange={(e) => setCost(e.target.value)}
-            step="0.01"
+            step={currencyStep(currency)}
             min="0"
-            placeholder="0.00"
+            placeholder={currencyPlaceholder(currency)}
             className="font-mono tabular-nums"
           />
         </div>

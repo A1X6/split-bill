@@ -31,6 +31,7 @@ export function calculateUserTotals(
           name: item.name,
           cost: item.cost,
           quantity: item.quantity,
+          share: costPerUser,
         });
         userTotals[userId].subtotal += costPerUser;
       }

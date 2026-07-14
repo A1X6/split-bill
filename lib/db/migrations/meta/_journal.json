@@ -8,6 +8,13 @@
       "when": 1784058552128,
       "tag": "0000_salty_mephisto",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784068464995,
+      "tag": "0001_regular_baron_strucker",
+      "breakpoints": true
     }
   ]
 }

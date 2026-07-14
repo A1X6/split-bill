@@ -9,18 +9,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatMoney } from "@/lib/currency";
 import { Participant, BillItem } from "@/lib/types";
 
 interface ItemListProps {
   items: BillItem[];
   users: Participant[];
   onRemoveItem: (itemId: string) => void;
+  currency: string;
 }
 
 export default function ItemList({
   items,
   users,
   onRemoveItem,
+  currency,
 }: ItemListProps) {
   if (items.length === 0) {
     return null;
@@ -44,13 +47,13 @@ export default function ItemList({
             <TableRow key={item.id}>
               <TableCell className="font-medium">{item.name}</TableCell>
               <TableCell className="text-right font-mono tabular-nums">
-                ${item.cost.toFixed(2)}
+                {formatMoney(item.cost, currency)}
               </TableCell>
               <TableCell className="text-right font-mono tabular-nums">
                 {item.quantity}
               </TableCell>
               <TableCell className="text-right font-mono font-semibold tabular-nums">
-                ${(item.cost * item.quantity).toFixed(2)}
+                {formatMoney(item.cost * item.quantity, currency)}
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">

@@ -20,7 +20,7 @@ export const bills = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     title: text("title").notNull().default("Untitled bill"),
     taxRate: real("tax_rate").notNull().default(0),
-    currency: text("currency"),
+    currency: text("currency").notNull().default("EGP"),
     participants: jsonb("participants")
       .$type<Participant[]>()
       .notNull()
