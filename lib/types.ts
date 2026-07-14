@@ -1,7 +1,10 @@
-/** A person on a bill — an ad-hoc display name, not a registered account. */
+/** A person on a bill. Usually an ad-hoc display name; when linked to a real
+ * account, `userId` is set (that's what makes them shareable). */
 export interface Participant {
   id: string;
   name: string;
+  /** Set when this participant is a registered user. Absent for ad-hoc names. */
+  userId?: string;
 }
 
 /** A line item on a bill. `users` holds the participant ids sharing the item. */

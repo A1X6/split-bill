@@ -4,6 +4,10 @@ import { CURRENCY_CODES } from "../currency";
 export const participantSchema = z.object({
   id: z.string().min(1).max(100),
   name: z.string().min(1).max(100),
+  // Optional, NOT nullable: a legacy participant is just {id, name}, and an
+  // unset userId is dropped by JSON.stringify rather than written as null — so
+  // existing bills stay byte-identical.
+  userId: z.string().max(64).optional(),
 });
 
 export const itemSchema = z.object({
@@ -29,6 +33,7 @@ export const billUpdateSchema = z
     // The split math keys totals by participant id, so a duplicate id would
     // quietly merge two people into one.
     const ids = new Set<string>();
+    const userIds = new Set<string>();
     data.participants.forEach((participant, index) => {
       if (ids.has(participant.id)) {
         ctx.addIssue({
@@ -38,6 +43,19 @@ export const billUpdateSchema = z
         });
       }
       ids.add(participant.id);
+
+      // The same account can't appear twice — otherwise a friend gets billed
+      // twice and the share fan-out has two rows for one recipient.
+      if (participant.userId) {
+        if (userIds.has(participant.userId)) {
+          ctx.addIssue({
+            code: "custom",
+            message: "That person is already on this bill.",
+            path: ["participants", index, "userId"],
+          });
+        }
+        userIds.add(participant.userId);
+      }
     });
 
     // Referential integrity jsonb can't enforce: every assignment must

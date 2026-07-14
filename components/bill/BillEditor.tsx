@@ -41,6 +41,7 @@ import {
   normalizeCurrency,
   toCurrencyCode,
 } from "@/lib/currency";
+import type { FriendSummary } from "@/lib/friends";
 import {
   Participant,
   BillItem,
@@ -129,7 +130,17 @@ function SectionCard({
   );
 }
 
-export default function BillEditor({ initialBill }: { initialBill: Bill }) {
+interface BillEditorProps {
+  initialBill: Bill;
+  currentUser: { id: string; name: string; image: string | null };
+  friends: FriendSummary[];
+}
+
+export default function BillEditor({
+  initialBill,
+  currentUser,
+  friends,
+}: BillEditorProps) {
   const [title, setTitle] = useState(initialBill.title);
   const [users, setUsers] = useState<Participant[]>(initialBill.participants);
   const [items, setItems] = useState<BillItem[]>(initialBill.items);
@@ -345,6 +356,8 @@ export default function BillEditor({ initialBill }: { initialBill: Bill }) {
           users={users}
           onAddUser={handleAddUser}
           onRemoveUser={handleRemoveUser}
+          currentUser={currentUser}
+          friends={friends}
         />
       </SectionCard>
 
