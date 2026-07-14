@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, ReceiptText } from "lucide-react";
+import { LogOut, ReceiptText, User, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -20,9 +20,15 @@ interface AppNavProps {
   userName: string;
   userEmail: string;
   userImage?: string | null;
+  userUsername?: string | null;
 }
 
-export default function AppNav({ userName, userEmail, userImage }: AppNavProps) {
+export default function AppNav({
+  userName,
+  userEmail,
+  userImage,
+  userUsername,
+}: AppNavProps) {
   const router = useRouter();
 
   const initials = userName
@@ -83,9 +89,20 @@ export default function AppNav({ userName, userEmail, userImage }: AppNavProps) 
                 <DropdownMenuLabel>
                   <div className="truncate font-medium">{userName}</div>
                   <div className="truncate text-xs font-normal text-muted-foreground">
-                    {userEmail}
+                    {userUsername ? `@${userUsername}` : userEmail}
                   </div>
                 </DropdownMenuLabel>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem render={<Link href="/profile" />}>
+                  <User />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem render={<Link href="/friends" />}>
+                  <Users />
+                  Friends
+                </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>

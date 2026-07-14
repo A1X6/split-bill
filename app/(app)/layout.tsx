@@ -12,6 +12,7 @@ export default async function AppLayout({
         userName={user.name}
         userEmail={user.email}
         userImage={user.image}
+        userUsername={user.username}
       />
       <main>{children}</main>
     </div>

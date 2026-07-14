@@ -7,6 +7,11 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  // Added by hand for the username plugin. Running `@better-auth/cli generate`
+  // would regenerate this file and delete the relations() and index()
+  // definitions below — so these two columns are maintained here directly.
+  username: text("username").unique(),
+  displayUsername: text("display_username"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
