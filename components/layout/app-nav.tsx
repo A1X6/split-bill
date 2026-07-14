@@ -2,15 +2,35 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { LogOut, ReceiptText } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { signOut } from "@/lib/auth-client";
+import { ThemeToggle } from "./theme-toggle";
 
 interface AppNavProps {
   userName: string;
   userEmail: string;
+  userImage?: string | null;
 }
 
-export default function AppNav({ userName, userEmail }: AppNavProps) {
+export default function AppNav({ userName, userEmail, userImage }: AppNavProps) {
   const router = useRouter();
+
+  const initials = userName
+    .split(" ")
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   const handleSignOut = async () => {
     await signOut({
@@ -24,27 +44,54 @@ export default function AppNav({ userName, userEmail }: AppNavProps) {
   };
 
   return (
-    <nav className="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link href="/dashboard" className="text-lg font-bold">
-          Split Bill
-        </Link>
-        <div className="flex items-center gap-4">
-          <span
-            className="hidden text-sm text-gray-500 dark:text-gray-400 sm:inline"
-            title={userEmail}
-          >
-            {userName}
+    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
+      <nav className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <ReceiptText className="size-4.5" />
           </span>
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
-          >
-            Sign out
-          </button>
+          <span className="font-heading text-lg font-semibold tracking-tight">
+            Split Bill
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  aria-label="Account menu"
+                  className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <Avatar className="size-8">
+                    {userImage ? (
+                      <AvatarImage src={userImage} alt="" />
+                    ) : null}
+                    <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">
+                      {initials || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="truncate font-medium">{userName}</div>
+                <div className="truncate text-xs font-normal text-muted-foreground">
+                  {userEmail}
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </header>
   );
 }

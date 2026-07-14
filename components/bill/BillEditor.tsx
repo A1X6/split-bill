@@ -1,6 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Check,
+  CircleAlert,
+  Loader2,
+  Percent,
+  ReceiptText,
+  ScanLine,
+  UsersRound,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import type { Bill } from "@/lib/db/schema/bills";
 import {
   Participant,
@@ -21,6 +46,74 @@ import ScannedItemsReview from "./ScannedItemsReview";
 type SaveState = "idle" | "pending" | "saving" | "saved" | "error";
 
 const AUTOSAVE_DELAY_MS = 1000;
+
+function SaveIndicator({ state }: { state: SaveState }) {
+  if (state === "idle") {
+    return <span className="h-5" />;
+  }
+
+  const content = {
+    pending: (
+      <>
+        <span className="size-1.5 rounded-full bg-muted-foreground" />
+        Unsaved changes
+      </>
+    ),
+    saving: (
+      <>
+        <Loader2 className="size-3.5 animate-spin" />
+        Saving…
+      </>
+    ),
+    saved: (
+      <>
+        <Check className="size-3.5 text-primary" />
+        Saved
+      </>
+    ),
+    error: (
+      <>
+        <CircleAlert className="size-3.5" />
+        Couldn&apos;t save — check your connection
+      </>
+    ),
+  }[state];
+
+  return (
+    <span
+      className={`flex h-5 items-center gap-1.5 text-xs ${
+        state === "error" ? "text-destructive" : "text-muted-foreground"
+      }`}
+      aria-live="polite"
+    >
+      {content}
+    </span>
+  );
+}
+
+function SectionCard({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="rounded-2xl [--card-spacing:--spacing(5)]">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+            <Icon className="size-4" />
+          </span>
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+}
 
 export default function BillEditor({ initialBill }: { initialBill: Bill }) {
   const [title, setTitle] = useState(initialBill.title);
@@ -193,170 +286,153 @@ export default function BillEditor({ initialBill }: { initialBill: Bill }) {
   const userTotals = calculateUserTotals(users, items, effectiveTaxRate);
   const overallTotal = calculateOverallTotal(users, items, effectiveTaxRate);
 
-  const saveLabel: Record<SaveState, string> = {
-    idle: "",
-    pending: "Unsaved changes…",
-    saving: "Saving…",
-    saved: "Saved",
-    error: "Couldn't save — check your connection",
-  };
+  const isEmpty = users.length === 0 && items.length === 0;
 
   return (
-    <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
-      <header className="py-4 space-y-2">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            markDirty();
-          }}
-          placeholder="Untitled bill"
-          aria-label="Bill title"
-          className="w-full bg-transparent text-3xl font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-0 border-b border-transparent focus:border-gray-300 dark:focus:border-gray-600 transition-colors"
+    <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:px-6">
+      <div className="space-y-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-2 text-muted-foreground"
+          nativeButton={false}
+          render={
+            <Link href="/dashboard">
+              <ArrowLeft data-icon="inline-start" />
+              All bills
+            </Link>
+          }
         />
-        <p
-          className={`text-sm ${
-            saveState === "error"
-              ? "text-red-500"
-              : "text-gray-500 dark:text-gray-400"
-          }`}
-          aria-live="polite"
-        >
-          {saveLabel[saveState] || " "}
-        </p>
-      </header>
-
-      <div className="space-y-6">
-        {/* People Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 overflow-hidden">
-          <div className="p-6">
-            <ParticipantManager
-              users={users}
-              onAddUser={handleAddUser}
-              onRemoveUser={handleRemoveUser}
-            />
-          </div>
+        <div>
+          <Input
+            type="text"
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              markDirty();
+            }}
+            placeholder="Untitled bill"
+            aria-label="Bill title"
+            className="font-heading h-auto border-0 bg-transparent px-0 py-1 text-3xl font-bold tracking-tight shadow-none focus-visible:ring-0 md:text-3xl"
+          />
+          <SaveIndicator state={saveState} />
         </div>
+      </div>
 
-        {/* Receipt Scanner Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
-              Scan Receipt with AI
-            </h2>
-            {scanResult ? (
-              <ScannedItemsReview
-                scan={scanResult}
-                users={users}
-                onAddItems={handleAddScannedItems}
-                onDismiss={() => setScanResult(null)}
-              />
-            ) : (
-              <ReceiptScanner onScanComplete={handleScanComplete} />
-            )}
-          </div>
-        </div>
+      <SectionCard icon={UsersRound} title="Who's splitting?">
+        <ParticipantManager
+          users={users}
+          onAddUser={handleAddUser}
+          onRemoveUser={handleRemoveUser}
+        />
+      </SectionCard>
 
-        {/* Tax Rate Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
-              Tax Rate
-            </h2>
-            <div className="flex items-center">
-              <input
-                type="number"
-                placeholder="Tax percentage"
-                min="0"
-                step="0.1"
-                value={taxRate}
-                onChange={(e) => updateTaxRate(e.target.value)}
-                className={`flex-grow px-4 py-3 rounded-xl border ${
-                  taxError
-                    ? "border-red-500 focus:border-red-500"
-                    : "border-gray-200 dark:border-gray-600 focus:border-blue-500"
-                } bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors`}
-              />
-              <span className="ml-2 text-gray-600 dark:text-gray-300 text-lg">
-                %
-              </span>
-            </div>
-            {detectedTaxes.length > 0 && (
-              <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">
-                Detected from receipt:{" "}
-                {detectedTaxes
-                  .map((tax) => `${tax.name} ${tax.rate}%`)
-                  .join(" × ")}
-                {detectedTaxes.length > 1 && (
-                  <>
-                    {" "}
-                    ={" "}
-                    <span className="font-medium text-gray-700 dark:text-gray-200">
-                      {(
-                        (detectedTaxes.reduce(
-                          (acc, tax) => acc * (1 + tax.rate / 100),
-                          1
-                        ) -
-                          1) *
-                        100
-                      ).toFixed(2)}
-                      % compounded
-                    </span>
-                  </>
-                )}
-              </p>
-            )}
-            {taxError && (
-              <p className="text-red-500 text-sm mt-2">
-                Please enter a valid tax rate (0 or greater)
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Items Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
-              Add Items
-            </h2>
-            <ItemForm users={users} onAddItem={handleAddItem} />
-            <ItemList
-              items={items}
-              users={users}
-              onRemoveItem={handleRemoveItem}
-            />
-          </div>
-        </div>
-
-        {/* Results Card */}
-        {users.length > 0 && items.length > 0 && !taxError && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 overflow-hidden">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
-                Results
-              </h2>
-              <Results
-                users={users}
-                userTotals={userTotals}
-                taxRate={taxRate}
-                overallTotal={overallTotal}
-              />
-            </div>
-          </div>
+      <SectionCard icon={ScanLine} title="Scan the receipt">
+        {scanResult ? (
+          <ScannedItemsReview
+            scan={scanResult}
+            users={users}
+            onAddItems={handleAddScannedItems}
+            onDismiss={() => setScanResult(null)}
+          />
+        ) : (
+          <ReceiptScanner onScanComplete={handleScanComplete} />
         )}
-      </div>
+      </SectionCard>
 
-      {/* Reset Button */}
-      <div className="flex justify-center py-6">
-        <button
-          onClick={handleReset}
-          className="px-8 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all transform hover:scale-105 active:scale-95 shadow-lg"
-        >
-          Clear this bill
-        </button>
-      </div>
+      <SectionCard icon={Percent} title="Tax rate">
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            placeholder="0"
+            min="0"
+            step="0.1"
+            value={taxRate}
+            aria-label="Tax rate percentage"
+            aria-invalid={taxError || undefined}
+            onChange={(e) => updateTaxRate(e.target.value)}
+            className="font-mono tabular-nums"
+          />
+          <span className="text-muted-foreground">%</span>
+        </div>
+        {detectedTaxes.length > 0 && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            From the receipt:{" "}
+            {detectedTaxes.map((tax) => `${tax.name} ${tax.rate}%`).join(" × ")}
+            {detectedTaxes.length > 1 && (
+              <>
+                {" "}
+                ={" "}
+                <span className="font-mono font-medium text-foreground tabular-nums">
+                  {(
+                    (detectedTaxes.reduce(
+                      (acc, tax) => acc * (1 + tax.rate / 100),
+                      1
+                    ) -
+                      1) *
+                    100
+                  ).toFixed(2)}
+                  %
+                </span>{" "}
+                compounded
+              </>
+            )}
+          </p>
+        )}
+        {taxError && (
+          <p className="mt-2 text-sm text-destructive">
+            Enter a tax rate of 0 or more
+          </p>
+        )}
+      </SectionCard>
+
+      <SectionCard icon={ReceiptText} title="Items">
+        <ItemForm users={users} onAddItem={handleAddItem} />
+        <ItemList items={items} users={users} onRemoveItem={handleRemoveItem} />
+      </SectionCard>
+
+      {users.length > 0 && items.length > 0 && !taxError && (
+        <SectionCard icon={Check} title="Everyone's share">
+          <Results
+            users={users}
+            userTotals={userTotals}
+            taxRate={taxRate}
+            overallTotal={overallTotal}
+          />
+        </SectionCard>
+      )}
+
+      {!isEmpty && (
+        <div className="flex justify-center pb-4">
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={
+                <Button variant="ghost" className="text-muted-foreground">
+                  Clear this bill
+                </Button>
+              }
+            />
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear this bill?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Everyone and every item is removed. The bill itself stays in
+                  your history.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep everything</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleReset}
+                  className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+                >
+                  Clear bill
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </div>
   );
 }

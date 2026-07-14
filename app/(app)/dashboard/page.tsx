@@ -1,5 +1,7 @@
 import { desc, eq } from "drizzle-orm";
+import { Plus, ReceiptText } from "lucide-react";
 import BillCard from "@/components/dashboard/BillCard";
+import { Button } from "@/components/ui/button";
 import { createBill } from "@/lib/actions/bills";
 import { db } from "@/lib/db";
 import { bills } from "@/lib/db/schema";
@@ -19,29 +21,41 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Your bills</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="font-heading text-2xl font-bold tracking-tight">
+            Your bills
+          </h1>
+          <p className="text-sm text-muted-foreground">
             Every bill autosaves — reopen one any time.
           </p>
         </div>
         <form action={createBill}>
-          <button
-            type="submit"
-            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 dark:bg-white dark:text-gray-900"
-          >
-            + New bill
-          </button>
+          <Button type="submit" size="lg">
+            <Plus data-icon="inline-start" />
+            New bill
+          </Button>
         </form>
       </div>
 
       {userBills.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 p-12 text-center dark:border-gray-600">
-          <h2 className="mb-1 font-semibold">No bills yet</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Create your first bill to start splitting expenses with friends.
+        <div className="rounded-2xl border border-dashed p-12 text-center">
+          <span className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+            <ReceiptText className="size-6" />
+          </span>
+          <h2 className="font-heading mb-1 text-lg font-semibold">
+            No bills yet
+          </h2>
+          <p className="mx-auto mb-6 max-w-xs text-sm text-muted-foreground">
+            Start your first bill, add the people you&apos;re with, and scan
+            the receipt.
           </p>
+          <form action={createBill}>
+            <Button type="submit">
+              <Plus data-icon="inline-start" />
+              Start your first bill
+            </Button>
+          </form>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
