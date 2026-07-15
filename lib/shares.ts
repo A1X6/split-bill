@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { billShares, user, type BillShare } from "@/lib/db/schema";
 
@@ -62,6 +62,50 @@ export async function getReceivedShare(
 
   if (!row) return null;
   return { ...row.share, fromName: row.fromName };
+}
+
+export interface BillShareStats {
+  /** Shares sent for this bill. */
+  total: number;
+  /** Recipient marked paid, awaiting the owner's confirmation. */
+  paid: number;
+  /** Owner confirmed receipt — settled. */
+  confirmed: number;
+}
+
+/**
+ * Per-bill share stats for the owner's dashboard ("settled x/y"). One grouped
+ * query for all the bills on the page; bills with no shares are simply absent
+ * from the map.
+ */
+export async function getShareStatsForBills(
+  billIds: string[],
+  ownerId: string,
+): Promise<Map<string, BillShareStats>> {
+  if (billIds.length === 0) return new Map();
+
+  const rows = await db
+    .select({
+      billId: billShares.billId,
+      total: sql<number>`count(*)::int`,
+      paid: sql<number>`coalesce(sum(case when ${billShares.status} = 'paid' then 1 else 0 end), 0)::int`,
+      confirmed: sql<number>`coalesce(sum(case when ${billShares.status} = 'confirmed' then 1 else 0 end), 0)::int`,
+    })
+    .from(billShares)
+    .where(
+      and(
+        eq(billShares.ownerId, ownerId),
+        inArray(billShares.billId, billIds),
+      ),
+    )
+    .groupBy(billShares.billId);
+
+  return new Map(
+    rows.map((r) => [
+      r.billId,
+      { total: r.total, paid: r.paid, confirmed: r.confirmed },
+    ]),
+  );
 }
 
 /** Count of pending shares awaiting this user's response — the nav badge. */

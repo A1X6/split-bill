@@ -27,9 +27,9 @@ export const paymentMethods = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    type: text("type").notNull(), // 'instapay_link' | 'instapay_qr'
+    type: text("type").notNull(), // 'instapay_link' | 'instapay_qr' | 'instapay_username'
     label: text("label").notNull(),
-    value: text("value").notNull(), // an https URL, or a data:image/...;base64 string
+    value: text("value").notNull(), // an https URL, a data:image/...;base64 string, or an InstaPay address
     isDefault: boolean("is_default").notNull().default(false),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -48,4 +48,7 @@ export const paymentMethodsRelations = relations(paymentMethods, ({ one }) => ({
 }));
 
 export type PaymentMethod = typeof paymentMethods.$inferSelect;
-export type PaymentMethodType = "instapay_link" | "instapay_qr";
+export type PaymentMethodType =
+  | "instapay_link"
+  | "instapay_qr"
+  | "instapay_username";

@@ -8,7 +8,7 @@ import { createBill } from "@/lib/actions/bills";
 import { db } from "@/lib/db";
 import { bills } from "@/lib/db/schema";
 import { requireUser } from "@/lib/session";
-import { getReceivedShares } from "@/lib/shares";
+import { getReceivedShares, getShareStatsForBills } from "@/lib/shares";
 
 export const metadata = {
   title: "Your bills",
@@ -24,6 +24,12 @@ export default async function DashboardPage() {
     }),
     getReceivedShares(user.id),
   ]);
+
+  // Per-bill "settled x/y" for the cards — one grouped query for the whole page.
+  const shareStats = await getShareStatsForBills(
+    userBills.map((b) => b.id),
+    user.id,
+  );
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -70,7 +76,11 @@ export default async function DashboardPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {userBills.map((bill) => (
-            <BillCard key={bill.id} bill={bill} />
+            <BillCard
+              key={bill.id}
+              bill={bill}
+              stats={shareStats.get(bill.id)}
+            />
           ))}
         </div>
       )}

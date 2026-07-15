@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Link2, Plus, QrCode, Star, Trash2 } from "lucide-react";
+import { AtSign, Link2, Plus, QrCode, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {
@@ -109,7 +109,11 @@ export default function PaymentMethods({
                   />
                 ) : (
                   <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-accent text-accent-foreground">
-                    <Link2 className="size-5" />
+                    {method.type === "instapay_username" ? (
+                      <AtSign className="size-5" />
+                    ) : (
+                      <Link2 className="size-5" />
+                    )}
                   </span>
                 )}
                 <div className="min-w-0 flex-1">
@@ -122,9 +126,7 @@ export default function PaymentMethods({
                     )}
                   </div>
                   <div className="truncate text-xs text-muted-foreground">
-                    {method.type === "instapay_qr"
-                      ? "QR code"
-                      : method.value}
+                    {method.type === "instapay_qr" ? "QR code" : method.value}
                   </div>
                 </div>
                 {!method.isDefault && (
@@ -181,14 +183,15 @@ export default function PaymentMethods({
   );
 }
 
+type MethodType = "instapay_link" | "instapay_qr" | "instapay_username";
+
 function AddMethodDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [type, setType] = useState<"instapay_link" | "instapay_qr">(
-    "instapay_link",
-  );
+  const [type, setType] = useState<MethodType>("instapay_link");
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
+  const [username, setUsername] = useState("");
   const [qr, setQr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -197,6 +200,7 @@ function AddMethodDialog() {
     setType("instapay_link");
     setLabel("");
     setUrl("");
+    setUsername("");
     setQr(null);
   };
 
@@ -220,7 +224,9 @@ function AddMethodDialog() {
     const input =
       type === "instapay_link"
         ? { type, label, value: url.trim() }
-        : { type, label, value: qr ?? "" };
+        : type === "instapay_username"
+          ? { type, label, value: username.trim() }
+          : { type, label, value: qr ?? "" };
     const result = await createPaymentMethod(input);
     setSaving(false);
     if (!result.ok) {
@@ -259,12 +265,12 @@ function AddMethodDialog() {
         <DialogHeader>
           <DialogTitle>Add payment method</DialogTitle>
           <DialogDescription>
-            An InstaPay payment link, or a QR code image.
+            An InstaPay link, username, or a QR code image.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Button
               type="button"
               variant={type === "instapay_link" ? "default" : "outline"}
@@ -272,6 +278,14 @@ function AddMethodDialog() {
             >
               <Link2 data-icon="inline-start" />
               Link
+            </Button>
+            <Button
+              type="button"
+              variant={type === "instapay_username" ? "default" : "outline"}
+              onClick={() => setType("instapay_username")}
+            >
+              <AtSign data-icon="inline-start" />
+              Username
             </Button>
             <Button
               type="button"
@@ -311,6 +325,24 @@ function AddMethodDialog() {
                   That doesn&apos;t look like an InstaPay link — double-check it.
                 </p>
               )}
+            </div>
+          ) : type === "instapay_username" ? (
+            <div className="space-y-2">
+              <Label htmlFor="pm-username">InstaPay address</Label>
+              <Input
+                id="pm-username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="you@instapay"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Friends see this and copy it into the InstaPay app.
+              </p>
             </div>
           ) : (
             <div className="space-y-2">

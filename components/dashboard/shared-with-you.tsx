@@ -46,23 +46,33 @@ export default function SharedWithYou({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === "accepted") {
+  if (status === "confirmed") {
     return (
       <Badge className="shrink-0 border-transparent bg-primary/15 font-normal text-primary">
-        Accepted
+        Settled
+      </Badge>
+    );
+  }
+  if (status === "paid") {
+    return (
+      <Badge
+        variant="outline"
+        className="shrink-0 border-primary/40 bg-primary/10 font-normal text-primary"
+      >
+        You paid
       </Badge>
     );
   }
   if (status === "declined") {
     return (
       <Badge variant="outline" className="shrink-0 font-normal text-muted-foreground">
-        Declined
+        Disputed
       </Badge>
     );
   }
   return (
     <Badge variant="secondary" className="shrink-0 font-normal">
-      Pending
+      Awaiting you
     </Badge>
   );
 }

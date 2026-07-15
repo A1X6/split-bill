@@ -25,6 +25,21 @@ export const paymentMethodSchema = z.discriminatedUnion("type", [
       )
       .max(MAX_QR_CHARS, "That image is too large."),
   }),
+  z.object({
+    type: z.literal("instapay_username"),
+    label: z.string().trim().min(1).max(60),
+    // An InstaPay address like `name@instapay`. Kept deliberately loose — it's
+    // shown as copy-to-paste text, never rendered as HTML or a link. No spaces.
+    value: z
+      .string()
+      .trim()
+      .min(3, "That's too short.")
+      .max(100)
+      .regex(
+        /^[A-Za-z0-9._@+-]+$/,
+        "Use letters, numbers, and . _ @ + - only.",
+      ),
+  }),
 ]);
 
 export type PaymentMethodInput = z.infer<typeof paymentMethodSchema>;

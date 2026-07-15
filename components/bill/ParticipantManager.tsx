@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Link from "next/link";
 import { UserPlus, Users, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import type { FriendSummary } from "@/lib/friends";
 import { initialsOf } from "@/lib/initials";
 import { Participant } from "@/lib/types";
@@ -40,24 +40,11 @@ export default function ParticipantManager({
   currentUser,
   friends,
 }: ParticipantManagerProps) {
-  const [userName, setUserName] = useState("");
-  const [error, setError] = useState(false);
-
   // Account ids already on the bill — used to disable duplicates.
   const linkedIds = new Set(
     users.map((u) => u.userId).filter((id): id is string => Boolean(id)),
   );
   const meAdded = linkedIds.has(currentUser.id);
-
-  const handleAddName = () => {
-    if (!userName.trim()) {
-      setError(true);
-      return;
-    }
-    onAddUser({ id: Date.now().toString(), name: userName.trim() });
-    setUserName("");
-    setError(false);
-  };
 
   const handleAddMe = () => {
     if (meAdded) return;
@@ -79,30 +66,6 @@ export default function ParticipantManager({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <div className="min-w-[200px] flex-grow">
-          <Input
-            type="text"
-            placeholder="Add a name — e.g. Maya"
-            value={userName}
-            aria-invalid={error || undefined}
-            onChange={(e) => {
-              setUserName(e.target.value);
-              if (e.target.value.trim()) setError(false);
-            }}
-            onKeyDown={(e) => e.key === "Enter" && handleAddName()}
-          />
-          {error && (
-            <p className="mt-1 text-sm text-destructive">
-              Enter a name to add someone
-            </p>
-          )}
-        </div>
-        <Button type="button" onClick={handleAddName} className="h-9">
-          Add person
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
         <Button
           type="button"
           variant="outline"
@@ -121,6 +84,19 @@ export default function ParticipantManager({
           />
         )}
       </div>
+
+      {friends.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          You can only split with friends.{" "}
+          <Link
+            href="/friends"
+            className="font-medium text-foreground underline underline-offset-4"
+          >
+            Add friends
+          </Link>{" "}
+          to split with them.
+        </p>
+      )}
 
       {users.length > 0 && (
         <div className="flex flex-wrap gap-2">

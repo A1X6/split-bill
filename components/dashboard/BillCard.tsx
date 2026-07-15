@@ -19,6 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { Bill } from "@/lib/db/schema/bills";
 import { deleteBill } from "@/lib/actions/bills";
 import { formatMoney } from "@/lib/currency";
+import type { BillShareStats } from "@/lib/shares";
 import { calculateOverallTotal } from "@/lib/split";
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
@@ -27,7 +28,13 @@ const dateFormatter = new Intl.DateTimeFormat("en", {
   year: "numeric",
 });
 
-export default function BillCard({ bill }: { bill: Bill }) {
+export default function BillCard({
+  bill,
+  stats,
+}: {
+  bill: Bill;
+  stats?: BillShareStats;
+}) {
   const [isDeleting, startDelete] = useTransition();
 
   const total = calculateOverallTotal(
@@ -36,6 +43,7 @@ export default function BillCard({ bill }: { bill: Bill }) {
     bill.taxRate
   );
   const title = bill.title || "Untitled bill";
+  const allSettled = stats ? stats.confirmed === stats.total : false;
 
   const handleDelete = () => {
     startDelete(async () => {
@@ -60,6 +68,20 @@ export default function BillCard({ bill }: { bill: Bill }) {
             {bill.participants.length === 1 ? "person" : "people"} ·{" "}
             {bill.items.length} {bill.items.length === 1 ? "item" : "items"}
           </p>
+          {stats && stats.total > 0 && (
+            <p
+              className={`text-xs font-medium ${
+                allSettled ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              {allSettled
+                ? "All settled"
+                : `${stats.confirmed}/${stats.total} settled`}
+              {!allSettled && stats.paid > 0
+                ? ` · ${stats.paid} to confirm`
+                : ""}
+            </p>
+          )}
           <div className="flex items-baseline justify-between border-t border-dashed pt-2">
             <span className="font-mono text-lg font-bold tabular-nums">
               {formatMoney(total, bill.currency)}

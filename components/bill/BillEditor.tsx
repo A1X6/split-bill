@@ -159,9 +159,14 @@ export default function BillEditor({
     toCurrencyCode(initialBill.currency)
   );
   // Who paid and which payment method to attach when sending shares. Both are
-  // bill columns, so they ride the same autosave payload.
+  // bill columns, so they ride the same autosave payload. Default "who paid" to
+  // you when reopening a bill you're already on — you usually paid it. New bills
+  // default the payer the moment you tap "Add me" (see handleAddUser).
   const [payerParticipantId, setPayerParticipantId] = useState<string | null>(
-    initialBill.payerParticipantId
+    () =>
+      initialBill.payerParticipantId ??
+      initialBill.participants.find((p) => p.userId === currentUser.id)?.id ??
+      null
   );
   const [paymentMethodId, setPaymentMethodId] = useState<string | null>(
     initialBill.paymentMethodId
@@ -264,6 +269,10 @@ export default function BillEditor({
 
   const handleAddUser = (user: Participant) => {
     setUsers([...users, user]);
+    // Default "who paid" to you the moment you join the bill — still changeable.
+    if (user.userId === currentUser.id && !payerParticipantId) {
+      setPayerParticipantId(user.id);
+    }
     markDirty();
   };
 
@@ -521,6 +530,7 @@ export default function BillEditor({
           participants={users}
           userTotals={userTotals}
           currency={currency}
+          currentUserId={currentUser.id}
           friends={friends}
           paymentMethods={paymentMethods}
           shares={shares}

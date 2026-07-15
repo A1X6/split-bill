@@ -1,14 +1,16 @@
-import { ArrowLeft, Check, ExternalLink, Wallet, X } from "lucide-react";
+import { ArrowLeft, Check, Clock, ExternalLink, Wallet, X } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import ShareActions from "@/components/shared/share-actions";
+import CopyAddress from "@/components/shared/copy-address";
+import RecipientActions from "@/components/shared/recipient-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatMoney } from "@/lib/currency";
 import { requireUser } from "@/lib/session";
-import { getReceivedShare } from "@/lib/shares";
+import { getReceivedShare, type ReceivedShare } from "@/lib/shares";
+import { calculateUserTotals } from "@/lib/split";
 
 export default async function SharedBillPage({
   params,
@@ -77,44 +79,77 @@ export default async function SharedBillPage({
             value={share.paymentMethodValue}
           />
 
-          {share.status === "pending" ? (
-            <ShareActions shareId={share.id} />
-          ) : (
-            <p
-              className={`flex items-center gap-2 rounded-lg p-3 text-sm ${
-                share.status === "accepted"
-                  ? "bg-primary/10 text-primary"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {share.status === "accepted" ? (
-                <Check className="size-4" />
-              ) : (
-                <X className="size-4" />
-              )}
-              {share.status === "accepted"
-                ? "You accepted this bill."
-                : "You declined this bill."}
-            </p>
-          )}
+          <ActionArea status={share.status} shareId={share.id} payerName={share.payerName} />
         </CardContent>
       </Card>
+
+      <BillBreakdown share={share} />
     </div>
   );
 }
 
+function ActionArea({
+  status,
+  shareId,
+  payerName,
+}: {
+  status: string;
+  shareId: string;
+  payerName: string;
+}) {
+  if (status === "pending" || status === "paid") {
+    return (
+      <div className="space-y-3">
+        {status === "paid" && (
+          <p className="flex items-center gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary">
+            <Clock className="size-4 shrink-0" />
+            You marked this paid — waiting for {payerName} to confirm they got it.
+          </p>
+        )}
+        <RecipientActions shareId={shareId} status={status} />
+      </div>
+    );
+  }
+
+  if (status === "confirmed") {
+    return (
+      <p className="flex items-center gap-2 rounded-lg bg-primary/10 p-3 text-sm text-primary">
+        <Check className="size-4 shrink-0" />
+        Settled — {payerName} confirmed they received it.
+      </p>
+    );
+  }
+
+  return (
+    <p className="flex items-center gap-2 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+      <X className="size-4 shrink-0" />
+      You disputed this bill. Ask {payerName} to check the amount and re-send.
+    </p>
+  );
+}
+
 function StatusBadge({ status }: { status: string }) {
-  if (status === "accepted") {
+  if (status === "confirmed") {
     return (
       <Badge className="border-transparent bg-primary/15 font-normal text-primary">
-        Accepted
+        Settled
+      </Badge>
+    );
+  }
+  if (status === "paid") {
+    return (
+      <Badge
+        variant="outline"
+        className="border-primary/40 bg-primary/10 font-normal text-primary"
+      >
+        You paid
       </Badge>
     );
   }
   if (status === "declined") {
     return (
       <Badge variant="outline" className="font-normal text-muted-foreground">
-        Declined
+        Disputed
       </Badge>
     );
   }
@@ -122,6 +157,97 @@ function StatusBadge({ status }: { status: string }) {
     <Badge variant="secondary" className="font-normal">
       Awaiting you
     </Badge>
+  );
+}
+
+/**
+ * The whole bill, so the recipient can see every item — not just their total.
+ * Rendered from the snapshot taken at send time; shares sent before snapshots
+ * existed simply omit this section.
+ */
+function BillBreakdown({ share }: { share: ReceivedShare }) {
+  const items = share.itemsSnapshot;
+  const participants = share.participantsSnapshot;
+  if (!items || !participants || items.length === 0) return null;
+
+  const taxRate = share.taxRateSnapshot ?? 0;
+  const totals = calculateUserTotals(participants, items, taxRate);
+  const nameById = new Map(participants.map((p) => [p.id, p.name]));
+  const mine = totals[share.participantId];
+
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader>
+        <span className="font-mono text-xs tracking-[0.2em] text-muted-foreground uppercase">
+          The whole bill
+        </span>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ul className="space-y-3">
+          {items.map((item) => {
+            const onIt = item.users.includes(share.participantId);
+            return (
+              <li key={item.id} className="text-sm">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className={onIt ? "font-medium" : ""}>
+                    {item.name}
+                    {item.quantity > 1 && (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        ×{item.quantity}
+                      </span>
+                    )}
+                    {onIt && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 px-1.5 py-0 text-[10px] font-normal"
+                      >
+                        You
+                      </Badge>
+                    )}
+                  </span>
+                  <span className="shrink-0 font-mono tabular-nums">
+                    {formatMoney(item.cost * item.quantity, share.currency)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {item.users.length === 0
+                    ? "No one assigned"
+                    : `Split by ${item.users
+                        .map((id) => nameById.get(id) ?? "?")
+                        .join(", ")}`}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+
+        {mine && (
+          <div className="space-y-1 border-t border-dashed pt-4 text-sm">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Your subtotal</span>
+              <span className="font-mono tabular-nums">
+                {formatMoney(mine.subtotal, share.currency)}
+              </span>
+            </div>
+            {taxRate > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Tax ({taxRate}%)</span>
+                <span className="font-mono tabular-nums">
+                  {formatMoney(mine.tax, share.currency)}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between font-medium">
+              <span>Your total</span>
+              <span className="font-mono tabular-nums">
+                {formatMoney(mine.total, share.currency)}
+              </span>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -157,6 +283,15 @@ function PaymentDetails({
           />
           {label && (
             <span className="text-sm text-muted-foreground">{label}</span>
+          )}
+        </div>
+      ) : type === "instapay_username" ? (
+        <div className="space-y-1.5">
+          <CopyAddress value={value} />
+          {label && (
+            <p className="text-xs text-muted-foreground">
+              {label} · send to this address on InstaPay
+            </p>
           )}
         </div>
       ) : (

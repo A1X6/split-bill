@@ -3,14 +3,13 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Send, Wallet } from "lucide-react";
+import { Check, Send, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -19,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { sendBillShares } from "@/lib/actions/shares";
+import { confirmSharePayment, sendBillShares } from "@/lib/actions/shares";
 import { formatMoney } from "@/lib/currency";
 import type { BillShare, PaymentMethod } from "@/lib/db/schema";
 import type { FriendSummary } from "@/lib/friends";
@@ -31,6 +30,7 @@ interface SendSharesProps {
   participants: Participant[];
   userTotals: Record<string, UserTotal>;
   currency: string;
+  currentUserId: string;
   friends: FriendSummary[];
   paymentMethods: PaymentMethod[];
   shares: BillShare[];
@@ -52,6 +52,7 @@ export default function SendShares({
   participants,
   userTotals,
   currency,
+  currentUserId,
   friends,
   paymentMethods,
   shares,
@@ -63,6 +64,8 @@ export default function SendShares({
 }: SendSharesProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [confirming, startConfirm] = useTransition();
 
   const friendIds = useMemo(() => new Set(friends.map((f) => f.id)), [friends]);
   const sharesByRecipient = useMemo(
@@ -73,63 +76,30 @@ export default function SendShares({
   // A billable recipient is a linked friend on this bill who isn't the payer.
   // (I'm never in my own friends list, so "add me" participants drop out here.)
   const recipients = participants.filter(
-    (p) =>
-      p.userId &&
-      friendIds.has(p.userId) &&
-      p.id !== payerParticipantId,
+    (p) => p.userId && friendIds.has(p.userId) && p.id !== payerParticipantId,
   );
 
   const currentAmount = (participantId: string) =>
     userTotals[participantId]?.total ?? 0;
-
-  const needsSending = (p: Participant): boolean => {
-    const share = sharesByRecipient.get(p.userId!);
-    if (!share) return true;
-    return amountChanged(share.amount, currentAmount(p.id));
-  };
-
-  // Default-select the people who actually need a (re)send: never sent, or
-  // their amount has changed since. Recompute when the recipient set, the sent
-  // shares, or the amounts owed shift — keyed via primitives so the memo can be
-  // statically checked.
-  const recipientKey = recipients.map((p) => p.userId).join(",");
-  const amountKey = recipients
-    .map((p) => currentAmount(p.id).toFixed(4))
-    .join(",");
-  const suggested = useMemo(
-    () =>
-      new Set(
-        recipients.filter(needsSending).map((p) => p.userId as string),
-      ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [recipientKey, amountKey, shares],
-  );
-  const [manual, setManual] = useState<Set<string> | null>(null);
-  const selected = manual ?? suggested;
-
-  const toggle = (userId: string) => {
-    setManual((prev) => {
-      const next = new Set(prev ?? suggested);
-      if (next.has(userId)) next.delete(userId);
-      else next.add(userId);
-      return next;
-    });
-  };
 
   const imageFor = (userId: string): string | null =>
     friends.find((f) => f.id === userId)?.image ?? null;
 
   const payer = participants.find((p) => p.id === payerParticipantId);
   const defaultMethodId = paymentMethods[0]?.id;
+  // Matches the server: your InstaPay is only attached when you're the payer.
+  const payerIsMe = Boolean(payer && payer.userId === currentUserId);
 
+  // Everyone on the bill gets sent to — no re-picking. They're all friends
+  // already, so the only question is who paid and how to pay them.
   const handleSend = () => {
     if (!payerParticipantId) {
       toast.error("Choose who paid first.");
       return;
     }
-    const ids = [...selected];
+    const ids = recipients.map((p) => p.userId as string);
     if (ids.length === 0) {
-      toast.error("Pick at least one person to send to.");
+      toast.error("Add a friend to this bill first.");
       return;
     }
     startTransition(async () => {
@@ -145,11 +115,24 @@ export default function SendShares({
         toast.error(result.error);
         return;
       }
-      setManual(null);
       toast.success(
-        `Sent to ${result.sent} ${result.sent === 1 ? "person" : "people"}.`,
+        `Sent to ${result.sent} ${result.sent === 1 ? "friend" : "friends"}.`,
       );
       router.refresh();
+    });
+  };
+
+  const handleConfirm = (shareId: string) => {
+    setConfirmingId(shareId);
+    startConfirm(async () => {
+      const result = await confirmSharePayment(shareId);
+      if (!result.ok) {
+        toast.error(result.error);
+      } else {
+        toast.success("Marked as received.");
+        router.refresh();
+      }
+      setConfirmingId(null);
     });
   };
 
@@ -160,7 +143,7 @@ export default function SendShares({
           <span className="flex size-7 items-center justify-center rounded-lg bg-accent text-accent-foreground">
             <Send className="size-4" />
           </span>
-          Send everyone their share
+          Send this bill to your friends
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -196,7 +179,7 @@ export default function SendShares({
             </Select>
           </div>
 
-          {paymentMethods.length > 0 && (
+          {payerIsMe && paymentMethods.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="method">Pay to</Label>
               <Select
@@ -210,8 +193,9 @@ export default function SendShares({
                       trigger never shows a bare payment-method id. */}
                   <SelectValue>
                     {(id: string | null) =>
-                      paymentMethods.find((m) => m.id === (id ?? defaultMethodId))
-                        ?.label ?? "Your payment method"
+                      paymentMethods.find(
+                        (m) => m.id === (id ?? defaultMethodId),
+                      )?.label ?? "Your payment method"
                     }
                   </SelectValue>
                 </SelectTrigger>
@@ -227,13 +211,23 @@ export default function SendShares({
           )}
         </div>
 
-        {paymentMethods.length === 0 && (
+        {payerIsMe && paymentMethods.length === 0 && (
           <Alert>
             <Wallet />
             <AlertDescription>
-              Add an InstaPay link or QR on your{" "}
+              Add an InstaPay link, username, or QR on your{" "}
               <Link href="/profile">profile</Link> so friends know how to pay
               you. You can still send without one.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {payer && !payerIsMe && (
+          <Alert>
+            <Wallet />
+            <AlertDescription>
+              {payer.name} paid, so friends will pay them directly — your
+              InstaPay isn&apos;t attached.
             </AlertDescription>
           </Alert>
         )}
@@ -242,7 +236,7 @@ export default function SendShares({
           <p className="text-sm text-muted-foreground">
             {payer
               ? "No friends to send to yet — add a friend as a participant above."
-              : "Choose who paid, then pick friends to send their share to."}
+              : "Choose who paid, then everyone else on the bill gets their share."}
           </p>
         ) : (
           <ul className="space-y-1">
@@ -251,31 +245,43 @@ export default function SendShares({
               const share = sharesByRecipient.get(userId);
               const changed =
                 share && amountChanged(share.amount, currentAmount(p.id));
+              const canConfirm =
+                share?.status === "paid" && !changed;
               return (
-                <li key={p.id}>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-lg p-2 hover:bg-muted">
-                    <Checkbox
-                      checked={selected.has(userId)}
-                      onCheckedChange={() => toggle(userId)}
-                    />
-                    <Avatar className="size-8">
-                      {imageFor(userId) ? (
-                        <AvatarImage src={imageFor(userId)!} alt="" />
-                      ) : null}
-                      <AvatarFallback className="text-xs">
-                        {initialsOf(p.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">
-                        {p.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground tabular-nums">
-                        {formatMoney(currentAmount(p.id), currency)}
-                      </div>
+                <li
+                  key={p.id}
+                  className="flex items-center gap-3 rounded-lg p-2"
+                >
+                  <Avatar className="size-8">
+                    {imageFor(userId) ? (
+                      <AvatarImage src={imageFor(userId)!} alt="" />
+                    ) : null}
+                    <AvatarFallback className="text-xs">
+                      {initialsOf(p.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{p.name}</div>
+                    <div className="text-xs text-muted-foreground tabular-nums">
+                      {formatMoney(currentAmount(p.id), currency)}
                     </div>
+                  </div>
+                  {canConfirm ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={confirming && confirmingId === share!.id}
+                      onClick={() => handleConfirm(share!.id)}
+                    >
+                      <Check data-icon="inline-start" />
+                      {confirming && confirmingId === share!.id
+                        ? "Confirming…"
+                        : "Confirm received"}
+                    </Button>
+                  ) : (
                     <StatusChip share={share} changed={Boolean(changed)} />
-                  </label>
+                  )}
                 </li>
               );
             })}
@@ -285,16 +291,20 @@ export default function SendShares({
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
             {payerParticipantId
-              ? "They'll see their share and how to pay you."
+              ? "Everyone on the bill gets their share and how to pay."
               : "Pick who paid to enable sending."}
           </p>
           <Button
             type="button"
             onClick={handleSend}
-            disabled={pending || !payerParticipantId || selected.size === 0}
+            disabled={pending || !payerParticipantId || recipients.length === 0}
           >
             <Send data-icon="inline-start" />
-            {pending ? "Sending…" : `Send${selected.size ? ` (${selected.size})` : ""}`}
+            {pending
+              ? "Sending…"
+              : `Send to ${recipients.length} ${
+                  recipients.length === 1 ? "friend" : "friends"
+                }`}
           </Button>
         </div>
       </CardContent>
@@ -326,17 +336,30 @@ function StatusChip({
       </Badge>
     );
   }
-  if (share.status === "accepted") {
+  if (share.status === "confirmed") {
     return (
       <Badge className="shrink-0 border-transparent bg-primary/15 font-normal text-primary">
-        Accepted
+        Settled
+      </Badge>
+    );
+  }
+  if (share.status === "paid") {
+    return (
+      <Badge
+        variant="outline"
+        className="shrink-0 border-primary/40 bg-primary/10 font-normal text-primary"
+      >
+        Paid — confirm
       </Badge>
     );
   }
   if (share.status === "declined") {
     return (
-      <Badge variant="outline" className="shrink-0 font-normal text-muted-foreground">
-        Declined
+      <Badge
+        variant="outline"
+        className="shrink-0 font-normal text-muted-foreground"
+      >
+        Disputed
       </Badge>
     );
   }

@@ -96,9 +96,20 @@ export async function sendBillShares(
     bill.taxRate,
   );
 
-  // The owner's payment method, copied onto each row so a later deletion can't
-  // orphan an already-sent share.
-  const method = await resolveDefaultPaymentMethod(me.id, bill.paymentMethodId);
+  // Only attach a payment method when the payer is the owner — my InstaPay is
+  // only the right destination when I'm the one who paid. If a friend paid, the
+  // recipient view falls back to "ask them how to pay".
+  const payerIsOwner = payer.userId === me.id;
+  const method = payerIsOwner
+    ? await resolveDefaultPaymentMethod(me.id, bill.paymentMethodId)
+    : null;
+
+  // The whole bill, snapshotted so the recipient can see every item and their
+  // share. Participants are name-only — never leak other people's account ids.
+  const participantsSnapshot = bill.participants.map((p) => ({
+    id: p.id,
+    name: p.name,
+  }));
 
   const rows = requestedIds.map((recipientId) => {
     const participant = participantByUserId.get(recipientId)!;
@@ -115,6 +126,9 @@ export async function sendBillShares(
       paymentMethodType: method?.type ?? null,
       paymentMethodLabel: method?.label ?? null,
       paymentMethodValue: method?.value ?? null,
+      itemsSnapshot: bill.items,
+      participantsSnapshot,
+      taxRateSnapshot: bill.taxRate,
     };
   });
 
@@ -135,10 +149,18 @@ export async function sendBillShares(
         paymentMethodType: sql`excluded.payment_method_type`,
         paymentMethodLabel: sql`excluded.payment_method_label`,
         paymentMethodValue: sql`excluded.payment_method_value`,
+        itemsSnapshot: sql`excluded.items_snapshot`,
+        participantsSnapshot: sql`excluded.participants_snapshot`,
+        taxRateSnapshot: sql`excluded.tax_rate_snapshot`,
         sentAt: sql`now()`,
         updatedAt: sql`now()`,
+        // A changed amount re-opens the share and wipes any paid/confirmed
+        // state — the friend must re-pay the new amount. A cosmetic edit leaves
+        // an already-settled share exactly as it was.
         status: sql`case when ${billShares.amount} <> excluded.amount then 'pending' else ${billShares.status} end`,
         respondedAt: sql`case when ${billShares.amount} <> excluded.amount then null else ${billShares.respondedAt} end`,
+        paidAt: sql`case when ${billShares.amount} <> excluded.amount then null else ${billShares.paidAt} end`,
+        confirmedAt: sql`case when ${billShares.amount} <> excluded.amount then null else ${billShares.confirmedAt} end`,
       },
     })
     .returning({
@@ -180,27 +202,117 @@ export async function sendBillShares(
 }
 
 /**
- * A recipient accepts or declines their share. Authorization is in the WHERE —
- * you can only answer a share addressed to you, and only while it's pending.
+ * The recipient marks their share paid (after actually sending the money).
+ * Authorization is in the WHERE — only the recipient, and only while pending.
+ * The owner still has to confirm receipt before it counts as settled.
  */
-export async function respondToShare(
+export async function markSharePaid(shareId: string): Promise<ActionResult> {
+  const me = await requireUser();
+
+  const parsed = idSchema.safeParse(shareId);
+  if (!parsed.success) return { ok: false, error: "Share not found." };
+
+  const updated = await db
+    .update(billShares)
+    .set({ status: "paid", paidAt: sql`now()`, respondedAt: sql`now()` })
+    .where(
+      and(
+        eq(billShares.id, parsed.data),
+        eq(billShares.recipientUserId, me.id),
+        eq(billShares.status, "pending"),
+      ),
+    )
+    .returning({ id: billShares.id });
+
+  if (updated.length === 0) {
+    return { ok: false, error: "Share not found." };
+  }
+
+  revalidatePath(`/shared/${parsed.data}`);
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+/**
+ * The recipient undoes a "paid" they marked by mistake — only allowed while the
+ * owner hasn't confirmed yet (status still 'paid').
+ */
+export async function unmarkSharePaid(shareId: string): Promise<ActionResult> {
+  const me = await requireUser();
+
+  const parsed = idSchema.safeParse(shareId);
+  if (!parsed.success) return { ok: false, error: "Share not found." };
+
+  const updated = await db
+    .update(billShares)
+    .set({ status: "pending", paidAt: null, respondedAt: null })
+    .where(
+      and(
+        eq(billShares.id, parsed.data),
+        eq(billShares.recipientUserId, me.id),
+        eq(billShares.status, "paid"),
+      ),
+    )
+    .returning({ id: billShares.id });
+
+  if (updated.length === 0) {
+    return { ok: false, error: "Couldn't undo — it may already be confirmed." };
+  }
+
+  revalidatePath(`/shared/${parsed.data}`);
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+/**
+ * The owner confirms they received the money. Owner-scoped, and only from a
+ * share the recipient has already marked paid.
+ */
+export async function confirmSharePayment(
   shareId: string,
-  action: "accept" | "decline",
 ): Promise<ActionResult> {
   const me = await requireUser();
 
   const parsed = idSchema.safeParse(shareId);
   if (!parsed.success) return { ok: false, error: "Share not found." };
 
-  const status = action === "accept" ? "accepted" : "declined";
+  const [row] = await db
+    .update(billShares)
+    .set({ status: "confirmed", confirmedAt: sql`now()` })
+    .where(
+      and(
+        eq(billShares.id, parsed.data),
+        eq(billShares.ownerId, me.id),
+        eq(billShares.status, "paid"),
+      ),
+    )
+    .returning({ billId: billShares.billId });
+
+  if (!row) return { ok: false, error: "Nothing to confirm." };
+
+  revalidatePath(`/bills/${row.billId}`);
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+/**
+ * The recipient disputes their share (wrong amount, not theirs, etc.). Allowed
+ * from pending or paid, but not once the owner has confirmed.
+ */
+export async function disputeShare(shareId: string): Promise<ActionResult> {
+  const me = await requireUser();
+
+  const parsed = idSchema.safeParse(shareId);
+  if (!parsed.success) return { ok: false, error: "Share not found." };
+
   const updated = await db
     .update(billShares)
-    .set({ status, respondedAt: sql`now()` })
+    .set({ status: "declined", paidAt: null, respondedAt: sql`now()` })
     .where(
       and(
         eq(billShares.id, parsed.data),
         eq(billShares.recipientUserId, me.id),
-        eq(billShares.status, "pending"),
+        inArray(billShares.status, ["pending", "paid"]),
       ),
     )
     .returning({ id: billShares.id });
