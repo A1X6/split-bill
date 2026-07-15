@@ -227,7 +227,13 @@ export default function BillEditor({
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-      return;
+      // Normally skip the initial autosave for an unchanged bill. Exception:
+      // if we derived a default payer (you) that isn't persisted yet, fall
+      // through so it gets written — otherwise an immediate send flushes
+      // nothing and the server rejects with "Choose who paid first."
+      const derivedPayerNeedsPersist =
+        initialBill.payerParticipantId == null && payerParticipantId != null;
+      if (!derivedPayerNeedsPersist) return;
     }
     if (taxError) return;
     const parsed = taxRate ? parseFloat(taxRate) : 0;
@@ -254,6 +260,7 @@ export default function BillEditor({
     paymentMethodId,
     taxError,
     flush,
+    initialBill.payerParticipantId,
   ]);
 
   // Warn before leaving while changes are still unsaved (best effort).

@@ -132,9 +132,11 @@ export async function sendBillShares(
     };
   });
 
-  // One statement for all N recipients. On re-send, re-open to pending ONLY if
-  // the amount actually changed — a cosmetic edit must not un-accept a share
-  // someone already agreed to.
+  // One statement for all N recipients. On re-send, re-open to pending when the
+  // amount changed OR the share was declined — a re-send is the mechanism the
+  // recipient's "ask them to re-send" hint points at, so it must clear a dispute
+  // and give them their actions back. A cosmetic edit to an accepted/paid share
+  // leaves it exactly as it was.
   const saved = await db
     .insert(billShares)
     .values(rows)
@@ -157,10 +159,10 @@ export async function sendBillShares(
         // A changed amount re-opens the share and wipes any paid/confirmed
         // state — the friend must re-pay the new amount. A cosmetic edit leaves
         // an already-settled share exactly as it was.
-        status: sql`case when ${billShares.amount} <> excluded.amount then 'pending' else ${billShares.status} end`,
-        respondedAt: sql`case when ${billShares.amount} <> excluded.amount then null else ${billShares.respondedAt} end`,
-        paidAt: sql`case when ${billShares.amount} <> excluded.amount then null else ${billShares.paidAt} end`,
-        confirmedAt: sql`case when ${billShares.amount} <> excluded.amount then null else ${billShares.confirmedAt} end`,
+        status: sql`case when ${billShares.amount} <> excluded.amount or ${billShares.status} = 'declined' then 'pending' else ${billShares.status} end`,
+        respondedAt: sql`case when ${billShares.amount} <> excluded.amount or ${billShares.status} = 'declined' then null else ${billShares.respondedAt} end`,
+        paidAt: sql`case when ${billShares.amount} <> excluded.amount or ${billShares.status} = 'declined' then null else ${billShares.paidAt} end`,
+        confirmedAt: sql`case when ${billShares.amount} <> excluded.amount or ${billShares.status} = 'declined' then null else ${billShares.confirmedAt} end`,
       },
     })
     .returning({

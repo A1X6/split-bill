@@ -38,6 +38,10 @@ export const paymentMethodSchema = z.discriminatedUnion("type", [
       .regex(
         /^[A-Za-z0-9._@+-]+$/,
         "Use letters, numbers, and . _ @ + - only.",
+      )
+      .refine(
+        (value) => /[A-Za-z0-9]/.test(value),
+        "Include at least one letter or number.",
       ),
   }),
 ]);
