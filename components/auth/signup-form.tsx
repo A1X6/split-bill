@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Check, Loader2, X } from "lucide-react";
 import GoogleButton from "@/components/auth/google-button";
+import VerifyEmailNotice from "@/components/auth/verify-email-notice";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -29,7 +29,6 @@ import {
 type Availability = { username: string; available: boolean } | null;
 
 export default function SignupForm() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -37,6 +36,7 @@ export default function SignupForm() {
   const [availability, setAvailability] = useState<Availability>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [awaitingVerification, setAwaitingVerification] = useState(false);
 
   // Derived during render: the normalized handle, whether it's well-formed, and
   // whether it's worth an availability round-trip.
@@ -72,17 +72,26 @@ export default function SignupForm() {
   // deadlocks the button — the server is the final arbiter of uniqueness.
   const usernameBlocked = !normalized || showInvalid || showTaken;
 
+  if (awaitingVerification) {
+    return <VerifyEmailNotice email={email} />;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (usernameBlocked) return;
     setError("");
     setLoading(true);
     await signUp.email(
-      { name: name.trim(), username: normalized, email, password },
+      {
+        name: name.trim(),
+        username: normalized,
+        email,
+        password,
+        callbackURL: "/dashboard",
+      },
       {
         onSuccess: () => {
-          router.push("/dashboard");
-          router.refresh();
+          setAwaitingVerification(true);
         },
         onError: (ctx) => {
           if (ctx.error.code === "USERNAME_IS_ALREADY_TAKEN") {

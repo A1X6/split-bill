@@ -3,7 +3,6 @@ import { ReceiptText } from "lucide-react";
 import BillCard from "@/components/dashboard/BillCard";
 import { NewBillButton } from "@/components/dashboard/new-bill-button";
 import SharedWithYou from "@/components/dashboard/shared-with-you";
-import UsernameNudge from "@/components/dashboard/username-nudge";
 import { createBill } from "@/lib/actions/bills";
 import { db } from "@/lib/db";
 import { bills } from "@/lib/db/schema";
@@ -33,8 +32,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      {!user.username && <UsernameNudge />}
-
       <SharedWithYou shares={receivedShares} />
 
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">

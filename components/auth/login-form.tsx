@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GoogleButton from "@/components/auth/google-button";
+import VerifyEmailNotice from "@/components/auth/verify-email-notice";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,31 +17,55 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn } from "@/lib/auth-client";
 
-export default function LoginForm() {
+// Friendly copy for the OAuth callback error codes that can land back on /login.
+// account_not_linked fires when Google's email matches an existing password
+// account that isn't verified yet — better-auth blocks the link to prevent
+// takeover, so we tell the user how to move forward instead of showing a code.
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  account_not_linked:
+    "This email already has a password account that isn't verified yet. Log in with your password below to finish verifying — after that, Continue with Google works too.",
+};
+
+function oauthMessage(code?: string): string {
+  if (!code) return "";
+  return OAUTH_ERROR_MESSAGES[code] ?? "Google sign-in didn't complete. Please try again.";
+}
+
+export default function LoginForm({ oauthError }: { oauthError?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => oauthMessage(oauthError));
   const [loading, setLoading] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     await signIn.email(
-      { email, password },
+      { email, password, callbackURL: "/dashboard" },
       {
         onSuccess: () => {
           router.push("/dashboard");
           router.refresh();
         },
         onError: (ctx) => {
-          setError(ctx.error.message || "Could not sign in.");
+          // 403 = email not verified; the server just re-sent the link.
+          if (ctx.error.status === 403) {
+            setUnverifiedEmail(email);
+          } else {
+            setError(ctx.error.message || "Could not sign in.");
+          }
           setLoading(false);
         },
       }
     );
   };
+
+  if (unverifiedEmail) {
+    return <VerifyEmailNotice email={unverifiedEmail} />;
+  }
 
   return (
     <Card className="rounded-2xl">
