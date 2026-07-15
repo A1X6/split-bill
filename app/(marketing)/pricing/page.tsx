@@ -16,16 +16,17 @@ export const metadata = {
 };
 
 const freeFeatures = [
-  "Unlimited bills",
+  "Unlimited bills, saved to your account",
   "AI receipt scanning",
   "Per-item splits with proportional tax",
-  "Saved bill history on every device",
-  "Friends never need an account",
+  "Send each friend their share in a tap",
+  "Get paid via InstaPay link, username, or QR",
+  "Track who's paid — and confirm it",
 ];
 
 const proFeatures = [
-  "Shareable links so friends see their share",
   "Export bills to CSV and PDF",
+  "Automatic reminders for unpaid shares",
   "Priority AI models for faster scans",
   "Groups that remember your regulars",
 ];

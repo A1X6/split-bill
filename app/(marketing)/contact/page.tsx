@@ -16,12 +16,17 @@ const faqs = [
   {
     question: "Is Split Bill really free?",
     answer:
-      "Yes. Every feature — AI receipt scanning, per-item splits, saved history — is free. A paid Pro plan with extras like shareable links and exports is planned, but everything free today stays free.",
+      "Yes. Adding friends, scanning receipts, per-item splits, sending everyone their share, and tracking who's paid are all free. A paid Pro plan with extras like CSV/PDF export and saved groups is planned — everything free today stays free.",
   },
   {
-    question: "Do my friends need accounts?",
+    question: "Do my friends need an account?",
     answer:
-      "No. Only you need an account. The people on your bill are just names you type in — you show or tell them their total.",
+      "Yes. You split with friends, so each person needs a free account and accepts your friend request once. After that, adding them to a bill and sending their share is a tap — and they can open their part and pay it.",
+  },
+  {
+    question: "How do friends pay me back?",
+    answer:
+      "You attach how you'd like to be paid — an InstaPay link, username, or QR — and it travels with each person's share. They open it, pay you in InstaPay, and tap “I've paid.” You confirm you got it, and the bill marks them settled. The transfer itself happens in InstaPay; Split Bill keeps the score.",
   },
   {
     question: "How does receipt scanning work?",
@@ -34,14 +39,9 @@ const faqs = [
       "Proportionally. Each person pays tax on what they actually ordered, not an even share of the total tax. If the receipt has several taxes or service charges, they're compounded the same way the restaurant applied them.",
   },
   {
-    question: "Can friends pay through the app?",
-    answer:
-      "Not yet. Split Bill tells everyone what they owe; you settle up however you already do — cash, transfer, or IOUs.",
-  },
-  {
     question: "Is my data private?",
     answer:
-      "Your bills are stored in your account and visible only to you. Receipt photos are sent to the AI model to be read, then discarded — we don't keep them.",
+      "Your bills live in your account. When you send someone their share, they can see the bill's items and totals so they can check what they owe — but only the people you send to. Receipt photos are sent to the AI model to be read, then discarded — we don't keep them.",
   },
 ];
 

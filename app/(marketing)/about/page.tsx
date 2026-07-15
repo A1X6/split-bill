@@ -1,31 +1,37 @@
 import Link from "next/link";
-import { ArrowRight, Camera, ListChecks, UsersRound } from "lucide-react";
+import { ArrowRight, BadgeCheck, Camera, Send, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
   title: "How it works",
   description:
-    "Add your people, scan the receipt, and everyone sees their share — tax included.",
+    "Add friends, scan the receipt, send everyone their share, and track who's paid — tax included.",
 };
 
 const steps = [
   {
-    icon: UsersRound,
+    icon: UserPlus,
     number: "01",
-    title: "Add your people",
-    body: "Start a bill and type the names of everyone splitting it. They're just names on your bill — nobody else has to download anything or make an account.",
+    title: "Add your friends",
+    body: "Search a friend by username or email and send a request. Once they accept, they're on your friends list — ready to add to any bill. You split with friends, so both of you have a free account and can see what's owed.",
   },
   {
     icon: Camera,
     number: "02",
     title: "Scan the receipt — or type it in",
-    body: "Take a photo of the receipt and the AI reads every line: items, unit prices, quantities, and each tax or service charge. Review the list, fix anything it misread, and assign each item to the people who had it. Prefer typing? Add items by hand just as fast.",
+    body: "Take a photo and the AI reads every line: items, unit prices, quantities, and each tax or service charge. Review the list, fix anything it misread, and assign each item to the people who had it. Prefer typing? Add items by hand just as fast.",
   },
   {
-    icon: ListChecks,
+    icon: Send,
     number: "03",
-    title: "Everyone sees their share",
-    body: "Each person's card shows exactly what they ordered, their subtotal, their slice of the tax, and their total. Shared items split evenly between the people who shared them — and tax lands in proportion to what each person spent.",
+    title: "Send everyone their share",
+    body: "Pick who paid — usually you — and attach how you'd like to be paid back: an InstaPay link, username, or QR. One tap sends every friend on the bill their exact share, with the payment details built in. No group chat, no re-picking who to send to.",
+  },
+  {
+    icon: BadgeCheck,
+    number: "04",
+    title: "Track who's paid",
+    body: "Each friend opens their share, pays you in InstaPay, and taps “I've paid.” You confirm you received it, and the bill marks them settled. Your dashboard shows, at a glance, which bills are fully paid and which are still owed.",
   },
 ];
 
@@ -37,7 +43,8 @@ export default function AboutPage() {
           How Split Bill works
         </h1>
         <p className="text-lg text-muted-foreground">
-          From &quot;check, please&quot; to settled up in about a minute.
+          From &quot;check, please&quot; to settled up — without the group-chat
+          math.
         </p>
       </div>
 
