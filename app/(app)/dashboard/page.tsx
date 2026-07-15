@@ -1,8 +1,10 @@
 import { desc, eq } from "drizzle-orm";
-import { ReceiptText } from "lucide-react";
+import { MessageSquarePlus, ReceiptText } from "lucide-react";
+import Link from "next/link";
 import BillCard from "@/components/dashboard/BillCard";
 import { NewBillButton } from "@/components/dashboard/new-bill-button";
 import SharedWithYou from "@/components/dashboard/shared-with-you";
+import { Button } from "@/components/ui/button";
 import { createBill } from "@/lib/actions/bills";
 import { db } from "@/lib/db";
 import { bills } from "@/lib/db/schema";
@@ -75,6 +77,29 @@ export default async function DashboardPage() {
           ))}
         </div>
       )}
+
+      <div className="mt-10 flex flex-col items-start gap-4 rounded-2xl border border-border/60 bg-muted/30 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+            <MessageSquarePlus className="size-5" />
+          </span>
+          <div>
+            <h2 className="font-heading text-base font-semibold">
+              Help shape Splitza
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Got a feature idea or hit a bug? Tell us — it goes straight to
+              the team.
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          nativeButton={false}
+          className="shrink-0"
+          render={<Link href="/feedback">Send feedback</Link>}
+        />
+      </div>
     </div>
   );
 }
