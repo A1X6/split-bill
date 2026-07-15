@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Inbox, LogOut, ReceiptText, User, Users } from "lucide-react";
+import {
+  Inbox,
+  LogOut,
+  MessageSquarePlus,
+  ReceiptText,
+  User,
+  Users,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -119,6 +126,10 @@ export default function AppNav({
                 <DropdownMenuItem render={<Link href="/friends" />}>
                   <Users />
                   Friends
+                </DropdownMenuItem>
+                <DropdownMenuItem render={<Link href="/feedback" />}>
+                  <MessageSquarePlus />
+                  Send feedback
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
