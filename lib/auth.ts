@@ -20,7 +20,7 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       const sent = await sendEmail({
         to: user.email,
-        subject: "Reset your Split Bill password",
+        subject: "Reset your Splitza password",
         html: resetPasswordEmail({ name: user.name, url }),
       });
       // Without a verified Resend domain the email never arrives. Printing the

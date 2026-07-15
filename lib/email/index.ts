@@ -1,7 +1,7 @@
 import "server-only";
 import { Resend } from "resend";
 
-const DEFAULT_FROM = "Split Bill <onboarding@resend.dev>";
+const DEFAULT_FROM = "Splitza <onboarding@resend.dev>";
 
 let client: Resend | null = null;
 let warned = false;

@@ -27,7 +27,7 @@ function shell(bodyHtml: string): string {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e7e2d6;">
             <tr>
               <td style="padding:24px 32px 8px;">
-                <span style="font-size:18px;font-weight:700;color:${INK};">Split Bill</span>
+                <span style="font-size:18px;font-weight:700;color:${INK};">Splitza</span>
               </td>
             </tr>
             <tr>
@@ -37,7 +37,7 @@ function shell(bodyHtml: string): string {
             </tr>
           </table>
           <p style="max-width:480px;color:${MUTED};font-size:12px;line-height:1.5;margin:16px auto 0;">
-            You're receiving this because someone used your email on Split Bill. If it wasn't you, you can ignore this message.
+            You're receiving this because someone used your email on Splitza. If it wasn't you, you can ignore this message.
           </p>
         </td>
       </tr>
@@ -54,7 +54,7 @@ export function resetPasswordEmail(opts: { name: string; url: string }): string 
   const name = escapeHtml(opts.name || "there");
   return shell(`
     <h1 style="font-size:20px;margin:12px 0 8px;color:${INK};">Reset your password</h1>
-    <p style="margin:0 0 20px;">Hi ${name}, we got a request to reset your Split Bill password. Click below to choose a new one — the link expires in an hour.</p>
+    <p style="margin:0 0 20px;">Hi ${name}, we got a request to reset your Splitza password. Click below to choose a new one — the link expires in an hour.</p>
     <p style="margin:0 0 24px;">${button(opts.url, "Reset password")}</p>
     <p style="margin:0;color:${MUTED};font-size:13px;">Didn't ask for this? Nothing has changed — you can safely ignore this email.</p>
   `);
@@ -73,7 +73,7 @@ export function friendRequestEmail(opts: {
     : "";
   return shell(`
     <h1 style="font-size:20px;margin:12px 0 8px;color:${INK};">${fromName} wants to be friends</h1>
-    <p style="margin:0 0 20px;">Hi ${toName}, ${fromName}${handle} sent you a friend request on Split Bill. Accept it to split bills together.</p>
+    <p style="margin:0 0 20px;">Hi ${toName}, ${fromName}${handle} sent you a friend request on Splitza. Accept it to split bills together.</p>
     <p style="margin:0 0 8px;">${button(opts.url, "View request")}</p>
   `);
 }

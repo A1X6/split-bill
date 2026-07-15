@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button";
 
 export const metadata = {
   title: "FAQ & contact",
-  description: "Answers to common questions about Split Bill.",
+  description: "Answers to common questions about Splitza.",
 };
 
 const faqs = [
   {
-    question: "Is Split Bill really free?",
+    question: "Is Splitza really free?",
     answer:
       "Yes. Adding friends, scanning receipts, per-item splits, sending everyone their share, and tracking who's paid are all free. A paid Pro plan with extras like CSV/PDF export and saved groups is planned — everything free today stays free.",
   },
@@ -26,7 +26,7 @@ const faqs = [
   {
     question: "How do friends pay me back?",
     answer:
-      "You attach how you'd like to be paid — an InstaPay link, username, or QR — and it travels with each person's share. They open it, pay you in InstaPay, and tap “I've paid.” You confirm you got it, and the bill marks them settled. The transfer itself happens in InstaPay; Split Bill keeps the score.",
+      "You attach how you'd like to be paid — an InstaPay link, username, or QR — and it travels with each person's share. They open it, pay you in InstaPay, and tap “I've paid.” You confirm you got it, and the bill marks them settled. The transfer itself happens in InstaPay; Splitza keeps the score.",
   },
   {
     question: "How does receipt scanning work?",

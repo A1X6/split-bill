@@ -11,7 +11,7 @@ export default function AuthLayout({
           <ReceiptText className="size-5" />
         </span>
         <span className="font-heading text-xl font-semibold tracking-tight">
-          Split Bill
+          Splitza
         </span>
       </Link>
       <div className="w-full max-w-sm">{children}</div>

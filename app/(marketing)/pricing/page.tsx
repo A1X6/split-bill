@@ -12,7 +12,7 @@ import {
 
 export const metadata = {
   title: "Pricing",
-  description: "Split Bill is free to use. A Pro plan is on the way.",
+  description: "Splitza is free to use. A Pro plan is on the way.",
 };
 
 const freeFeatures = [

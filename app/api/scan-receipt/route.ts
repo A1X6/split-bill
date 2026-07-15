@@ -113,8 +113,8 @@ async function callModel(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://github.com/split-bill",
-      "X-Title": "Split Bill",
+      "HTTP-Referer": "https://splitza.app",
+      "X-Title": "Splitza",
     },
     body: JSON.stringify({
       model: model.id,

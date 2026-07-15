@@ -1,4 +1,4 @@
-# Split Bill
+# Splitza
 
 Split any bill in seconds. Snap a photo of the receipt, assign items to the people who had them, and everyone knows exactly what they owe — tax included.
 
@@ -15,7 +15,9 @@ A full Next.js app with accounts, a marketing site, and saved bill history in Po
 - 🌓 Light and dark themes with a toggle.
 - 📱 Responsive, from phone to desktop.
 
-Friends on a bill are just names — only you need an account.
+- 🧑‍🤝‍🧑 **Friends & shared bills** — add friends by username, send everyone their share in a tap, and track who's paid; each person pays you back via InstaPay (link, username, or QR) and marks it paid for you to confirm.
+
+You split with friends, so each person needs a free account.
 
 ## Tech Stack
 
@@ -31,8 +33,8 @@ Friends on a bill are just names — only you need an account.
 ### 1. Install
 
 ```bash
-git clone https://github.com/yourusername/split-bill.git
-cd split-bill
+git clone https://github.com/yourusername/splitza.git
+cd splitza
 npm install
 ```
 
@@ -59,7 +61,7 @@ Google sign-in and receipt scanning each degrade gracefully: leave their variabl
 Any Postgres works. Create a free database at [neon.tech](https://neon.tech) (or add the Neon integration to your Vercel project) and copy its connection string into `DATABASE_URL` — or point `DATABASE_URL` at a local Postgres instead:
 
 ```bash
-docker run -d --name splitbill-pg -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:17
+docker run -d --name splitza-pg -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:17
 # DATABASE_URL=postgresql://postgres:postgres@localhost:55432/postgres
 ```
 
@@ -92,7 +94,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 1. **Sign up** — with email and password, or with Google.
 2. **New bill** — from your dashboard. It saves as you go.
-3. **Add the people** splitting it (just their names).
+3. **Add friends** to split it with (add yourself, or friends you've connected with).
 4. **Scan the receipt** — or type items in by hand. Review what the AI read, fix anything it misread, and assign each item to the people who had it.
 5. **Set the tax rate** — scanned receipts fill this in automatically.
 6. **See everyone's share** — each person's items, subtotal, tax, and total.

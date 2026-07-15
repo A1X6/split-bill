@@ -40,7 +40,7 @@ export default function AboutPage() {
     <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 md:py-24">
       <div className="mb-14 text-center">
         <h1 className="font-heading mb-3 text-4xl font-bold tracking-tight">
-          How Split Bill works
+          How Splitza works
         </h1>
         <p className="text-lg text-muted-foreground">
           From &quot;check, please&quot; to settled up — without the group-chat

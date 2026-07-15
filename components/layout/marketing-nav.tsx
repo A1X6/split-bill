@@ -27,7 +27,7 @@ export default function MarketingNav() {
             <ReceiptText className="size-4.5" />
           </span>
           <span className="font-heading text-lg font-semibold tracking-tight">
-            Split Bill
+            Splitza
           </span>
         </Link>
 
@@ -69,7 +69,7 @@ export default function MarketingNav() {
             />
             <SheetContent side="right">
               <SheetHeader>
-                <SheetTitle>Split Bill</SheetTitle>
+                <SheetTitle>Splitza</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1 px-4">
                 {links.map((link) => (

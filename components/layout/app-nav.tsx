@@ -55,7 +55,7 @@ export default function AppNav({
             <ReceiptText className="size-4.5" />
           </span>
           <span className="font-heading text-lg font-semibold tracking-tight">
-            Split Bill
+            Splitza
           </span>
         </Link>
 

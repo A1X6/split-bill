@@ -20,16 +20,19 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://splitza.app"),
   title: {
-    default: "Split Bill — Split any bill in seconds",
-    template: "%s · Split Bill",
+    default: "Splitza — Split any bill in seconds",
+    template: "%s · Splitza",
   },
   description:
     "Snap a photo of the receipt, assign items to friends, and everyone knows exactly what they owe — tax included. Free to use.",
   openGraph: {
-    title: "Split Bill",
+    title: "Splitza",
     description:
       "Snap a photo of the receipt, assign items to friends, and everyone knows exactly what they owe.",
+    url: "https://splitza.app",
+    siteName: "Splitza",
     type: "website",
   },
 };

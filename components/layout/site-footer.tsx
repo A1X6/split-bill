@@ -8,7 +8,7 @@ export default function SiteFooter() {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <ReceiptText className="size-4" />
           <span className="font-mono">
-            © {new Date().getFullYear()} Split Bill
+            © {new Date().getFullYear()} Splitza
           </span>
         </div>
         <nav className="flex items-center gap-6 text-sm text-muted-foreground">
