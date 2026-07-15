@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Menu, ReceiptText } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -10,6 +11,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { initialsOf } from "@/lib/initials";
 import { ThemeToggle } from "./theme-toggle";
 
 const links = [
@@ -18,7 +20,14 @@ const links = [
   { href: "/contact", label: "FAQ" },
 ];
 
-export default function MarketingNav() {
+interface MarketingNavProps {
+  /** Present when a session exists — swaps the auth buttons for Dashboard + avatar. */
+  user?: { name: string; image?: string | null } | null;
+}
+
+export default function MarketingNav({ user }: MarketingNavProps) {
+  const initials = user ? initialsOf(user.name) : "";
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -45,15 +54,39 @@ export default function MarketingNav() {
 
         <div className="hidden items-center gap-2 md:flex">
           <ThemeToggle />
-          <Button
-            variant="ghost"
-            nativeButton={false}
-            render={<Link href="/login">Log in</Link>}
-          />
-          <Button
-            nativeButton={false}
-            render={<Link href="/signup">Get started free</Link>}
-          />
+          {user ? (
+            <>
+              <Button
+                variant="ghost"
+                nativeButton={false}
+                render={<Link href="/dashboard">Dashboard</Link>}
+              />
+              <Link
+                href="/profile"
+                aria-label="Your profile"
+                className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <Avatar className="size-8">
+                  {user.image ? <AvatarImage src={user.image} alt="" /> : null}
+                  <AvatarFallback className="bg-accent text-accent-foreground text-xs font-semibold">
+                    {initials || "?"}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                nativeButton={false}
+                render={<Link href="/login">Log in</Link>}
+              />
+              <Button
+                nativeButton={false}
+                render={<Link href="/signup">Get started free</Link>}
+              />
+            </>
+          )}
         </div>
 
         {/* Mobile */}
@@ -82,15 +115,31 @@ export default function MarketingNav() {
                   </Link>
                 ))}
                 <div className="mt-4 flex flex-col gap-2">
-                  <Button
-                    variant="outline"
-                    nativeButton={false}
-                    render={<Link href="/login">Log in</Link>}
-                  />
-                  <Button
-                    nativeButton={false}
-                    render={<Link href="/signup">Get started free</Link>}
-                  />
+                  {user ? (
+                    <>
+                      <Button
+                        nativeButton={false}
+                        render={<Link href="/dashboard">Dashboard</Link>}
+                      />
+                      <Button
+                        variant="outline"
+                        nativeButton={false}
+                        render={<Link href="/profile">Profile</Link>}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        nativeButton={false}
+                        render={<Link href="/login">Log in</Link>}
+                      />
+                      <Button
+                        nativeButton={false}
+                        render={<Link href="/signup">Get started free</Link>}
+                      />
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>
