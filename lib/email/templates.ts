@@ -247,3 +247,43 @@ export function billShareEmail(opts: {
     },
   );
 }
+
+/**
+ * Internal notification sent to the app owner when a user submits in-app
+ * feedback. The user's message is untrusted — escaped, with newlines kept as
+ * <br>. sendEmail sets reply-to to the user so a reply reaches them directly.
+ */
+export function feedbackEmail(opts: {
+  fromName: string;
+  fromEmail: string;
+  fromUsername: string | null;
+  category: string;
+  message: string;
+}): string {
+  const name = escapeHtml(opts.fromName || "A user");
+  const email = escapeHtml(opts.fromEmail);
+  const handle = opts.fromUsername ? `@${escapeHtml(opts.fromUsername)}` : "—";
+  const category = escapeHtml(opts.category);
+  const message = escapeHtml(opts.message).replace(/\n/g, "<br>");
+
+  const metaRow = (k: string, v: string) =>
+    `<tr><td class="muted" style="padding:3px 0;color:${MUTED};width:96px;vertical-align:top;">${k}</td><td class="ink" style="padding:3px 0;color:${INK};">${v}</td></tr>`;
+
+  return shell(
+    `${heading("New feedback")}
+     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;font-family:${MONO};font-size:13px;">
+       ${metaRow("Category", `<strong>${category}</strong>`)}
+       ${metaRow("From", `${name} (${handle})`)}
+       ${metaRow("Email", email)}
+     </table>
+     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+       <td class="panel" style="background:${PANEL};border:1px solid ${BORDER};border-radius:14px;padding:18px 20px;">
+         <div class="ink" style="font-family:${BODY_SANS};font-size:15px;line-height:1.6;color:${INK};">${message}</div>
+       </td>
+     </tr></table>`,
+    {
+      preheader: `${category} from ${name}`,
+      footnote: `Reply to this email to respond to ${name} directly.`,
+    },
+  );
+}

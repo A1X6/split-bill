@@ -1,4 +1,5 @@
-import { Mail } from "lucide-react";
+import Link from "next/link";
+import { MessageSquarePlus } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -75,16 +76,16 @@ export default function ContactPage() {
           Something else on your mind?
         </h2>
         <p className="mb-5 text-sm text-muted-foreground">
-          Send a note and a human will reply.
+          Send us a note from your dashboard — we read every one and use it to
+          decide what to build next.
         </p>
         <Button
-          variant="outline"
           nativeButton={false}
           render={
-            <a href="mailto:ax.ahmed.ax@gmail.com">
-              <Mail data-icon="inline-start" />
-              ax.ahmed.ax@gmail.com
-            </a>
+            <Link href="/feedback">
+              <MessageSquarePlus data-icon="inline-start" />
+              Send feedback
+            </Link>
           }
         />
       </div>

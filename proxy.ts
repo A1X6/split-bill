@@ -22,7 +22,8 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/profile") ||
     pathname.startsWith("/friends") ||
     pathname.startsWith("/shared") ||
-    pathname.startsWith("/welcome");
+    pathname.startsWith("/welcome") ||
+    pathname.startsWith("/feedback");
 
   if (!sessionCookie && isProtected) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -39,5 +40,6 @@ export const config = {
     "/friends/:path*",
     "/shared/:path*",
     "/welcome/:path*",
+    "/feedback/:path*",
   ],
 };

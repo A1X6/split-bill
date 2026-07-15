@@ -31,6 +31,7 @@ export async function sendEmail(opts: {
   to: string;
   subject: string;
   html: string;
+  replyTo?: string;
 }): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
@@ -53,6 +54,7 @@ export async function sendEmail(opts: {
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
+      ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
     });
     if (error) {
       console.warn(`[email] send failed: ${error.message}`);
