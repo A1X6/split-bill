@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, ReceiptText, User, Users } from "lucide-react";
+import { Inbox, LogOut, ReceiptText, User, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -22,6 +22,7 @@ interface AppNavProps {
   userEmail: string;
   userImage?: string | null;
   userUsername?: string | null;
+  pendingShares?: number;
 }
 
 export default function AppNav({
@@ -29,6 +30,7 @@ export default function AppNav({
   userEmail,
   userImage,
   userUsername,
+  pendingShares = 0,
 }: AppNavProps) {
   const router = useRouter();
 
@@ -64,8 +66,12 @@ export default function AppNav({
               render={
                 <button
                   type="button"
-                  aria-label="Account menu"
-                  className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  aria-label={
+                    pendingShares > 0
+                      ? `Account menu, ${pendingShares} bills awaiting your response`
+                      : "Account menu"
+                  }
+                  className="relative rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <Avatar className="size-8">
                     {userImage ? (
@@ -75,6 +81,11 @@ export default function AppNav({
                       {initials || "?"}
                     </AvatarFallback>
                   </Avatar>
+                  {pendingShares > 0 && (
+                    <span className="absolute -top-1 -right-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground tabular-nums">
+                      {pendingShares > 9 ? "9+" : pendingShares}
+                    </span>
+                  )}
                 </button>
               }
             />
@@ -90,6 +101,15 @@ export default function AppNav({
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
+                {pendingShares > 0 && (
+                  <DropdownMenuItem render={<Link href="/dashboard" />}>
+                    <Inbox />
+                    Shared with you
+                    <span className="ml-auto flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground tabular-nums">
+                      {pendingShares > 9 ? "9+" : pendingShares}
+                    </span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem render={<Link href="/profile" />}>
                   <User />
                   Profile

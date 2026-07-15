@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Bill } from "@/lib/db/schema/bills";
+import type { BillShare, PaymentMethod } from "@/lib/db/schema";
 import {
   CURRENCIES,
   type CurrencyCode,
@@ -57,6 +58,7 @@ import ItemList from "./ItemList";
 import Results from "./Results";
 import ReceiptScanner from "./ReceiptScanner";
 import ScannedItemsReview from "./ScannedItemsReview";
+import SendShares from "./SendShares";
 
 type SaveState = "idle" | "pending" | "saving" | "saved" | "error";
 
@@ -134,12 +136,16 @@ interface BillEditorProps {
   initialBill: Bill;
   currentUser: { id: string; name: string; image: string | null };
   friends: FriendSummary[];
+  paymentMethods: PaymentMethod[];
+  shares: BillShare[];
 }
 
 export default function BillEditor({
   initialBill,
   currentUser,
   friends,
+  paymentMethods,
+  shares,
 }: BillEditorProps) {
   const [title, setTitle] = useState(initialBill.title);
   const [users, setUsers] = useState<Participant[]>(initialBill.participants);
@@ -152,6 +158,14 @@ export default function BillEditor({
   const [currency, setCurrency] = useState<CurrencyCode>(
     toCurrencyCode(initialBill.currency)
   );
+  // Who paid and which payment method to attach when sending shares. Both are
+  // bill columns, so they ride the same autosave payload.
+  const [payerParticipantId, setPayerParticipantId] = useState<string | null>(
+    initialBill.payerParticipantId
+  );
+  const [paymentMethodId, setPaymentMethodId] = useState<string | null>(
+    initialBill.paymentMethodId
+  );
   const [taxError, setTaxError] = useState(false);
   const [scanResult, setScanResult] = useState<ScanReceiptResult | null>(null);
   const [detectedTaxes, setDetectedTaxes] = useState<ScannedTax[]>([]);
@@ -163,34 +177,46 @@ export default function BillEditor({
   const latestRef = useRef<BillUpdateInput | null>(null);
   const inFlightRef = useRef(false);
   const dirtyRef = useRef(false);
+  const savePromiseRef = useRef<Promise<boolean> | null>(null);
   const isFirstRender = useRef(true);
 
   // Called from every mutating event handler so the save indicator reacts
   // immediately, before the debounced flush.
   const markDirty = () => setSaveState("pending");
 
-  const flush = useCallback(async () => {
-    if (!latestRef.current) return;
+  // Resolves true once the latest state is persisted. SendShares awaits this
+  // before sending so the server reads the payer/method the user just picked,
+  // not a stale row the debounce hasn't flushed yet. If a save is already in
+  // flight, mark it dirty (its loop re-runs with the latest state) and await
+  // that same promise rather than starting a second, racing write.
+  const flush = useCallback(async (): Promise<boolean> => {
+    if (!latestRef.current) return true;
     if (inFlightRef.current) {
       dirtyRef.current = true;
-      return;
+      return savePromiseRef.current ?? true;
     }
     inFlightRef.current = true;
     setSaveState("saving");
-    try {
-      do {
-        dirtyRef.current = false;
-        const result = await updateBill(initialBill.id, latestRef.current);
-        if (!result.ok) {
-          throw new Error(result.error);
-        }
-      } while (dirtyRef.current);
-      setSaveState("saved");
-    } catch {
-      setSaveState("error");
-    } finally {
-      inFlightRef.current = false;
-    }
+    const run = (async () => {
+      try {
+        do {
+          dirtyRef.current = false;
+          const result = await updateBill(initialBill.id, latestRef.current!);
+          if (!result.ok) {
+            throw new Error(result.error);
+          }
+        } while (dirtyRef.current);
+        setSaveState("saved");
+        return true;
+      } catch {
+        setSaveState("error");
+        return false;
+      } finally {
+        inFlightRef.current = false;
+      }
+    })();
+    savePromiseRef.current = run;
+    return run;
   }, [initialBill.id]);
 
   useEffect(() => {
@@ -206,12 +232,24 @@ export default function BillEditor({
       currency,
       participants: users,
       items,
+      payerParticipantId,
+      paymentMethodId,
     };
     const timer = setTimeout(() => {
       void flush();
     }, AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [title, users, items, taxRate, currency, taxError, flush]);
+  }, [
+    title,
+    users,
+    items,
+    taxRate,
+    currency,
+    payerParticipantId,
+    paymentMethodId,
+    taxError,
+    flush,
+  ]);
 
   // Warn before leaving while changes are still unsaved (best effort).
   useEffect(() => {
@@ -237,6 +275,11 @@ export default function BillEditor({
         users: item.users.filter((id) => id !== userId),
       }))
     );
+    // A removed payer would fail validation (payer must be a participant) and
+    // brick autosave.
+    if (payerParticipantId === userId) {
+      setPayerParticipantId(null);
+    }
     markDirty();
   };
 
@@ -309,6 +352,7 @@ export default function BillEditor({
     setTaxError(false);
     setScanResult(null);
     setDetectedTaxes([]);
+    setPayerParticipantId(null);
     markDirty();
   };
 
@@ -469,6 +513,29 @@ export default function BillEditor({
             currency={currency}
           />
         </SectionCard>
+      )}
+
+      {users.some((u) => u.userId) && (
+        <SendShares
+          billId={initialBill.id}
+          participants={users}
+          userTotals={userTotals}
+          currency={currency}
+          friends={friends}
+          paymentMethods={paymentMethods}
+          shares={shares}
+          payerParticipantId={payerParticipantId}
+          paymentMethodId={paymentMethodId}
+          onPayerChange={(id) => {
+            setPayerParticipantId(id);
+            markDirty();
+          }}
+          onPaymentMethodChange={(id) => {
+            setPaymentMethodId(id);
+            markDirty();
+          }}
+          flushNow={flush}
+        />
       )}
 
       {!isEmpty && (

@@ -28,6 +28,13 @@ export const billUpdateSchema = z
     currency: z.enum(CURRENCY_CODES),
     participants: z.array(participantSchema).max(50),
     items: z.array(itemSchema).max(200),
+    // Who paid — a Participant.id in this bill's jsonb. Nullable: a bill may
+    // have no payer chosen yet.
+    payerParticipantId: z.string().max(100).nullable(),
+    // The payment method to attach when sending shares. Ownership is NOT
+    // checkable here (it references another table) — updateBill re-verifies it
+    // belongs to the caller. See the IDOR note in lib/actions/bills.ts.
+    paymentMethodId: z.uuid().nullable(),
   })
   .superRefine((data, ctx) => {
     // The split math keys totals by participant id, so a duplicate id would
@@ -69,6 +76,15 @@ export const billUpdateSchema = z
         });
       }
     });
+
+    // The payer must be someone actually on the bill.
+    if (data.payerParticipantId !== null && !ids.has(data.payerParticipantId)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "The payer isn't a participant on this bill.",
+        path: ["payerParticipantId"],
+      });
+    }
   });
 
 export type BillUpdateInput = z.infer<typeof billUpdateSchema>;

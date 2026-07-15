@@ -1,12 +1,14 @@
 import { desc, eq } from "drizzle-orm";
 import { Plus, ReceiptText } from "lucide-react";
 import BillCard from "@/components/dashboard/BillCard";
+import SharedWithYou from "@/components/dashboard/shared-with-you";
 import UsernameNudge from "@/components/dashboard/username-nudge";
 import { Button } from "@/components/ui/button";
 import { createBill } from "@/lib/actions/bills";
 import { db } from "@/lib/db";
 import { bills } from "@/lib/db/schema";
 import { requireUser } from "@/lib/session";
+import { getReceivedShares } from "@/lib/shares";
 
 export const metadata = {
   title: "Your bills",
@@ -15,14 +17,20 @@ export const metadata = {
 export default async function DashboardPage() {
   const user = await requireUser();
 
-  const userBills = await db.query.bills.findMany({
-    where: eq(bills.userId, user.id),
-    orderBy: [desc(bills.updatedAt)],
-  });
+  const [userBills, receivedShares] = await Promise.all([
+    db.query.bills.findMany({
+      where: eq(bills.userId, user.id),
+      orderBy: [desc(bills.updatedAt)],
+    }),
+    getReceivedShares(user.id),
+  ]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       {!user.username && <UsernameNudge />}
+
+      <SharedWithYou shares={receivedShares} />
+
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl font-bold tracking-tight">
