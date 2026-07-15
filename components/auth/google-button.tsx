@@ -33,7 +33,18 @@ export default function GoogleButton({
 }) {
   const handleGoogle = async () => {
     await signIn.social(
-      { provider: "google", callbackURL: "/dashboard" },
+      {
+        provider: "google",
+        callbackURL: "/dashboard",
+        // First-time Google users have no username yet — send them to pick one.
+        // (The app-layout gate enforces this regardless of entry point.)
+        newUserCallbackURL: "/welcome",
+        // OAuth callback failures (e.g. account_not_linked when the email is
+        // already an unverified password account) otherwise dump the user on
+        // better-auth's unstyled default error page. Send them back to /login,
+        // which reads ?error= and shows a branded, actionable message.
+        errorCallbackURL: "/login",
+      },
       {
         onError: (ctx) => {
           onError(ctx.error.message || "Google sign-in failed.");
