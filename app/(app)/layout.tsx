@@ -14,7 +14,7 @@ export default async function AppLayout({
         userName={user.name}
         userEmail={user.email}
         userImage={user.image}
-        userUsername={user.username}
+        userUsername={user.displayUsername ?? user.username}
         pendingShares={pendingShares}
       />
       <main>{children}</main>

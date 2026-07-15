@@ -17,7 +17,7 @@ export default async function ProfilePage() {
       </h1>
       <ProfileTabs
         initialName={user.name}
-        initialUsername={user.username ?? null}
+        initialUsername={user.displayUsername ?? user.username ?? null}
         initialImage={user.image ?? null}
         methods={methods}
       />

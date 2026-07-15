@@ -146,7 +146,7 @@ export async function sendFriendRequest(
           html: friendRequestEmail({
             toName: target.name,
             fromName: me.name,
-            fromUsername: me.username ?? null,
+            fromUsername: me.displayUsername ?? me.username ?? null,
             url: `${appUrl()}/friends`,
           }),
         });

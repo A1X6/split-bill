@@ -18,6 +18,11 @@ import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { compressImage } from "@/lib/compressImage";
 import { cn } from "@/lib/utils";
+import {
+  isValidUsername,
+  normalizeUsername,
+  USERNAME_HINT,
+} from "@/lib/validation/username";
 
 interface ProfileFormProps {
   initialName: string;
@@ -30,10 +35,6 @@ interface ProfileFormProps {
 // input yet) instead of set synchronously in the effect, which the react-hooks
 // rule forbids.
 type Availability = { username: string; available: boolean } | null;
-
-// The plugin lowercases and stores usernames; only letters, numbers, and
-// underscores are valid, 3–24 chars.
-const USERNAME_PATTERN = /^[a-z0-9_]{3,24}$/;
 
 export default function ProfileForm({
   initialName,
@@ -58,10 +59,9 @@ export default function ProfileForm({
 
   // Derived during render, not stored: a username is "unchanged" (no check
   // needed), empty, or badly formatted purely as a function of the input.
-  const trimmedUsername = username.trim().toLowerCase();
+  const trimmedUsername = normalizeUsername(username);
   const usernameChanged = trimmedUsername !== (initialUsername ?? "");
-  const formatValid =
-    !trimmedUsername || USERNAME_PATTERN.test(trimmedUsername);
+  const formatValid = !trimmedUsername || isValidUsername(trimmedUsername);
   const needsCheck = usernameChanged && trimmedUsername !== "" && formatValid;
 
   // The async availability lookup. setState happens only inside the deferred
@@ -94,6 +94,8 @@ export default function ProfileForm({
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset so re-selecting the same file (e.g. after Remove) fires onChange.
+    e.target.value = "";
     if (!file) return;
     try {
       // Small: this lands in user.image, which the layout reads on every page.
@@ -231,7 +233,7 @@ export default function ProfileForm({
               {showTaken
                 ? "That username is already taken."
                 : showInvalid
-                  ? "3–24 characters: letters, numbers, underscore."
+                  ? USERNAME_HINT
                   : showAvailable
                     ? "Available."
                     : "Friends can find you by @username or your email."}

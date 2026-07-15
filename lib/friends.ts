@@ -15,8 +15,7 @@ export type FriendRelation =
   | "none"
   | "friends"
   | "incoming" // they requested me
-  | "outgoing" // I requested them
-  | "self";
+  | "outgoing"; // I requested them
 
 export interface PendingRequest {
   friendshipId: string;

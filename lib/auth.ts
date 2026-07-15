@@ -4,6 +4,11 @@ import { username } from "better-auth/plugins";
 import { db } from "./db";
 import { sendEmail } from "./email";
 import { resetPasswordEmail } from "./email/templates";
+import {
+  USERNAME_MAX,
+  USERNAME_MIN,
+  USERNAME_PATTERN,
+} from "./validation/username";
 
 // Google sign-in only activates once credentials are configured, so the app
 // still runs (email/password only) before the OAuth client is set up.
@@ -39,5 +44,14 @@ export const auth = betterAuth({
         },
       }
     : {},
-  plugins: [username({ minUsernameLength: 3, maxUsernameLength: 24 })],
+  plugins: [
+    username({
+      minUsernameLength: USERNAME_MIN,
+      maxUsernameLength: USERNAME_MAX,
+      // The plugin's default validator also allows dots; ours matches the app's
+      // [a-z0-9_] rule so a direct API call can't create a handle the UI would
+      // later reject. Lowercased first because the plugin stores it lowercased.
+      usernameValidator: (value) => USERNAME_PATTERN.test(value.toLowerCase()),
+    }),
+  ],
 });

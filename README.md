@@ -92,12 +92,13 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## How to Use
 
-1. **Sign up** — with email and password, or with Google.
+1. **Sign up** — pick a username (how friends find you), with email and password or Google.
 2. **New bill** — from your dashboard. It saves as you go.
 3. **Add friends** to split it with (add yourself, or friends you've connected with).
 4. **Scan the receipt** — or type items in by hand. Review what the AI read, fix anything it misread, and assign each item to the people who had it.
 5. **Set the tax rate** — scanned receipts fill this in automatically.
 6. **See everyone's share** — each person's items, subtotal, tax, and total.
+7. **Send & settle** — send each friend their share; they pay you back over InstaPay and tap "I've paid," you confirm you received it, and the bill tracks who's settled.
 
 ## Deploying
 

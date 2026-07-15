@@ -68,7 +68,9 @@ export default function AppNav({
                   type="button"
                   aria-label={
                     pendingShares > 0
-                      ? `Account menu, ${pendingShares} bills awaiting your response`
+                      ? `Account menu, ${pendingShares} ${
+                          pendingShares === 1 ? "bill" : "bills"
+                        } awaiting your response`
                       : "Account menu"
                   }
                   className="relative rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"

@@ -1,9 +1,12 @@
-/** A person on a bill. Usually an ad-hoc display name; when linked to a real
- * account, `userId` is set (that's what makes them shareable). */
+/** A person on a bill. Every participant added through the app is a linked
+ * account (`userId` set) — that's what makes them shareable, now that splitting
+ * is friends-only. Name-only rows exist only in legacy bills created before
+ * that rule. */
 export interface Participant {
   id: string;
   name: string;
-  /** Set when this participant is a registered user. Absent for ad-hoc names. */
+  /** The linked account. Present for all app-created participants; absent only
+   * on legacy name-only rows. */
   userId?: string;
 }
 
