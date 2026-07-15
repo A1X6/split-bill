@@ -469,7 +469,6 @@ export default function BillEditor({
                 min="0"
                 step="0.1"
                 value={taxRate}
-                aria-label="Tax rate percentage"
                 aria-invalid={taxError || undefined}
                 onChange={(e) => updateTaxRate(e.target.value)}
                 className="font-mono tabular-nums"

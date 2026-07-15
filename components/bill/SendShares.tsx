@@ -7,7 +7,7 @@ import { Check, Send, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { ShareStatusBadge } from "@/components/shared/share-status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -280,7 +280,13 @@ export default function SendShares({
                         : "Confirm received"}
                     </Button>
                   ) : (
-                    <StatusChip share={share} changed={Boolean(changed)} />
+                    <ShareStatusBadge
+                      status={share?.status ?? "pending"}
+                      audience="owner"
+                      notSent={!share}
+                      amountChanged={Boolean(changed)}
+                      className="shrink-0"
+                    />
                   )}
                 </li>
               );
@@ -312,60 +318,3 @@ export default function SendShares({
   );
 }
 
-function StatusChip({
-  share,
-  changed,
-}: {
-  share: BillShare | undefined;
-  changed: boolean;
-}) {
-  if (!share) {
-    return (
-      <Badge variant="outline" className="shrink-0 font-normal">
-        Not sent
-      </Badge>
-    );
-  }
-  if (changed) {
-    return (
-      <Badge
-        variant="outline"
-        className="shrink-0 border-amber-500/40 bg-amber-500/10 font-normal text-amber-700 dark:text-amber-400"
-      >
-        Amount changed
-      </Badge>
-    );
-  }
-  if (share.status === "confirmed") {
-    return (
-      <Badge className="shrink-0 border-transparent bg-primary/15 font-normal text-primary">
-        Settled
-      </Badge>
-    );
-  }
-  if (share.status === "paid") {
-    return (
-      <Badge
-        variant="outline"
-        className="shrink-0 border-primary/40 bg-primary/10 font-normal text-primary"
-      >
-        Paid — confirm
-      </Badge>
-    );
-  }
-  if (share.status === "declined") {
-    return (
-      <Badge
-        variant="outline"
-        className="shrink-0 font-normal text-muted-foreground"
-      >
-        Disputed
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="secondary" className="shrink-0 font-normal">
-      Pending
-    </Badge>
-  );
-}

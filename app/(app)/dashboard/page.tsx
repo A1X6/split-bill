@@ -1,9 +1,9 @@
 import { desc, eq } from "drizzle-orm";
-import { Plus, ReceiptText } from "lucide-react";
+import { ReceiptText } from "lucide-react";
 import BillCard from "@/components/dashboard/BillCard";
+import { NewBillButton } from "@/components/dashboard/new-bill-button";
 import SharedWithYou from "@/components/dashboard/shared-with-you";
 import UsernameNudge from "@/components/dashboard/username-nudge";
-import { Button } from "@/components/ui/button";
 import { createBill } from "@/lib/actions/bills";
 import { db } from "@/lib/db";
 import { bills } from "@/lib/db/schema";
@@ -47,10 +47,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         <form action={createBill}>
-          <Button type="submit" size="lg">
-            <Plus data-icon="inline-start" />
-            New bill
-          </Button>
+          <NewBillButton size="lg">New bill</NewBillButton>
         </form>
       </div>
 
@@ -67,10 +64,7 @@ export default async function DashboardPage() {
             the receipt.
           </p>
           <form action={createBill}>
-            <Button type="submit">
-              <Plus data-icon="inline-start" />
-              Start your first bill
-            </Button>
+            <NewBillButton>Start your first bill</NewBillButton>
           </form>
         </div>
       ) : (

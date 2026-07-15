@@ -35,6 +35,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-warning: var(--warning);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -68,6 +69,8 @@
   --accent: oklch(0.945 0.028 160);
   --accent-foreground: oklch(0.33 0.07 165);
   --destructive: oklch(0.577 0.245 27.325);
+  /* Amber, for "needs attention" states (e.g. a re-sent bill's amount changed). */
+  --warning: oklch(0.62 0.14 68);
   --border: oklch(0.9 0.014 85);
   --input: oklch(0.9 0.014 85);
   --ring: oklch(0.58 0.125 163);
@@ -103,6 +106,7 @@
   --accent: oklch(0.32 0.035 165);
   --accent-foreground: oklch(0.88 0.06 165);
   --destructive: oklch(0.704 0.191 22.216);
+  --warning: oklch(0.8 0.13 78);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
   --ring: oklch(0.72 0.115 163);
@@ -145,6 +149,103 @@
     mask-size: 14px 100%;
     mask-position: 50%;
   }
+
+  /* Faint paper-dot texture. Theme-aware via the foreground token; sits behind
+   * content at low contrast so it reads as grain, not pattern. */
+  .bg-dots {
+    background-image: radial-gradient(
+      color-mix(in oklch, var(--foreground) 9%, transparent) 0.6px,
+      transparent 0.6px
+    );
+    background-size: 22px 22px;
+  }
+
+  /* Soft emerald glow, used as an absolutely-positioned layer behind the hero
+   * receipt so it feels lit rather than pasted onto a flat plane. */
+  .glow-primary {
+    background: radial-gradient(
+      closest-side,
+      color-mix(in oklch, var(--primary) 30%, transparent),
+      transparent
+    );
+    filter: blur(8px);
+  }
+
+  /* One-off hover sheen for the hero receipt — a light sweep on hover only,
+   * never ambient, so it stays a small reward rather than decoration. */
+  .sheen-hover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      105deg,
+      transparent 35%,
+      color-mix(in oklch, white 22%, transparent) 50%,
+      transparent 65%
+    );
+    transform: translateX(-130%);
+    pointer-events: none;
+  }
+  .sheen-hover:hover::after {
+    transform: translateX(130%);
+    transition: transform 0.9s ease;
+  }
+}
+
+@layer utilities {
+  /* Slow idle float. Applied to a WRAPPER, not the receipt itself, so it only
+   * touches translateY and never fights the card's rotate/hover-straighten. */
+  .hero-float {
+    animation: float-y 6s ease-in-out infinite;
+  }
+
+  /* On-load entrance: rise + fade, staggered with an inline animation-delay.
+   * fill-mode both holds the start frame through the delay; the reduced-motion
+   * block below collapses the duration so it lands instantly and visible. */
+  .rise-in {
+    animation: rise-in 0.7s ease-out both;
+  }
+
+  /* Scroll-reveal: hidden by default, shown once the Reveal component adds
+   * [data-shown] when the element scrolls into view. CSS-driven so the only JS
+   * is the IntersectionObserver toggle. Reduced-motion and no-JS fall back to
+   * visible via the media queries below — content is never stuck hidden. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(1rem);
+    filter: blur(2px);
+    transition:
+      opacity 0.7s ease-out,
+      transform 0.7s ease-out,
+      filter 0.7s ease-out;
+  }
+  .reveal[data-shown] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -154,5 +255,20 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  /* Never leave reveal content hidden when motion is off. */
+  .reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* No-JS fallback: the observer never runs, so show reveal content outright. */
+@media (scripting: none) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
   }
 }

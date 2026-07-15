@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import CopyAddress from "@/components/shared/copy-address";
 import RecipientActions from "@/components/shared/recipient-actions";
+import { ShareStatusBadge } from "@/components/shared/share-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -61,7 +62,7 @@ export default async function SharedBillPage({
             <span className="font-mono text-xs tracking-[0.2em] text-muted-foreground uppercase">
               Your share
             </span>
-            <StatusBadge status={share.status} />
+            <ShareStatusBadge status={share.status} audience="recipient" />
           </div>
           <p className="font-mono text-4xl font-bold tabular-nums">
             {formatMoney(share.amount, share.currency)}
@@ -125,38 +126,6 @@ function ActionArea({
       <X className="size-4 shrink-0" />
       You disputed this bill. Ask {payerName} to check the amount and re-send.
     </p>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  if (status === "confirmed") {
-    return (
-      <Badge className="border-transparent bg-primary/15 font-normal text-primary">
-        Settled
-      </Badge>
-    );
-  }
-  if (status === "paid") {
-    return (
-      <Badge
-        variant="outline"
-        className="border-primary/40 bg-primary/10 font-normal text-primary"
-      >
-        You paid
-      </Badge>
-    );
-  }
-  if (status === "declined") {
-    return (
-      <Badge variant="outline" className="font-normal text-muted-foreground">
-        Disputed
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="secondary" className="font-normal">
-      Awaiting you
-    </Badge>
   );
 }
 

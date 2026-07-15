@@ -52,9 +52,12 @@ export default function PaymentMethods({
   methods: PaymentMethod[];
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  // Per-row in-flight id, so acting on one method never disables the others.
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   const handleSetDefault = (id: string) => {
+    setPendingId(id);
     startTransition(async () => {
       const result = await setDefaultPaymentMethod(id);
       if (!result.ok) toast.error(result.error);
@@ -62,10 +65,12 @@ export default function PaymentMethods({
         toast.success("Default updated.");
         router.refresh();
       }
+      setPendingId(null);
     });
   };
 
   const handleDelete = (id: string) => {
+    setPendingId(id);
     startTransition(async () => {
       const result = await deletePaymentMethod(id);
       if (!result.ok) toast.error(result.error);
@@ -73,6 +78,7 @@ export default function PaymentMethods({
         toast.success("Payment method removed.");
         router.refresh();
       }
+      setPendingId(null);
     });
   };
 
@@ -134,7 +140,7 @@ export default function PaymentMethods({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    disabled={pending}
+                    disabled={pendingId === method.id}
                     onClick={() => handleSetDefault(method.id)}
                   >
                     <Star data-icon="inline-start" />
@@ -150,7 +156,7 @@ export default function PaymentMethods({
                         size="icon-sm"
                         aria-label={`Remove ${method.label}`}
                         className="text-muted-foreground hover:text-destructive"
-                        disabled={pending}
+                        disabled={pendingId === method.id}
                       >
                         <Trash2 />
                       </Button>
@@ -206,6 +212,8 @@ function AddMethodDialog() {
 
   const handleQrFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset so re-selecting the same image fires onChange again.
+    e.target.value = "";
     if (!file) return;
     try {
       const dataUrl = await compressImage(file, {

@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { formatMoney } from "@/lib/currency";
 import { Participant, UserTotal } from "@/lib/types";
 
@@ -56,9 +57,12 @@ export default function Results({
                         <span className="flex items-center gap-2 text-muted-foreground">
                           {item.name}
                           {item.quantity > 1 && (
-                            <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-xs tabular-nums">
+                            <Badge
+                              variant="secondary"
+                              className="font-mono tabular-nums"
+                            >
                               ×{item.quantity}
-                            </span>
+                            </Badge>
                           )}
                         </span>
                         {/* This person's cut, not the line total — the two
@@ -77,14 +81,16 @@ export default function Results({
                         {formatMoney(userTotal.subtotal, currency)}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Tax ({taxRate || "0"}%)
-                      </span>
-                      <span className="font-mono tabular-nums">
-                        {formatMoney(userTotal.tax, currency)}
-                      </span>
-                    </div>
+                    {userTotal.tax > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          Tax ({taxRate || "0"}%)
+                        </span>
+                        <span className="font-mono tabular-nums">
+                          {formatMoney(userTotal.tax, currency)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (

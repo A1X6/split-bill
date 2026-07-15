@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useTransition } from "react";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +48,12 @@ export default function BillCard({
 
   const handleDelete = () => {
     startDelete(async () => {
-      await deleteBill(bill.id);
+      try {
+        await deleteBill(bill.id);
+      } catch {
+        // The card un-fades when the transition ends; tell them why.
+        toast.error("Couldn't delete that bill. Try again.");
+      }
     });
   };
 

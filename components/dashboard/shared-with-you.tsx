@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Inbox } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ShareStatusBadge } from "@/components/shared/share-status-badge";
 import { formatMoney } from "@/lib/currency";
 import type { ReceivedShare } from "@/lib/shares";
 
@@ -33,7 +33,11 @@ export default function SharedWithYou({
                   from {share.fromName}
                 </div>
               </div>
-              <StatusBadge status={share.status} />
+              <ShareStatusBadge
+                status={share.status}
+                audience="recipient"
+                className="shrink-0"
+              />
             </div>
             <div className="font-mono text-xl font-bold tabular-nums">
               {formatMoney(share.amount, share.currency)}
@@ -42,37 +46,5 @@ export default function SharedWithYou({
         ))}
       </div>
     </section>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  if (status === "confirmed") {
-    return (
-      <Badge className="shrink-0 border-transparent bg-primary/15 font-normal text-primary">
-        Settled
-      </Badge>
-    );
-  }
-  if (status === "paid") {
-    return (
-      <Badge
-        variant="outline"
-        className="shrink-0 border-primary/40 bg-primary/10 font-normal text-primary"
-      >
-        You paid
-      </Badge>
-    );
-  }
-  if (status === "declined") {
-    return (
-      <Badge variant="outline" className="shrink-0 font-normal text-muted-foreground">
-        Disputed
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="secondary" className="shrink-0 font-normal">
-      Awaiting you
-    </Badge>
   );
 }
