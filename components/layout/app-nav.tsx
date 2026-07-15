@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, ReceiptText } from "lucide-react";
+import { Inbox, LogOut, ReceiptText, User, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -14,24 +14,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/lib/auth-client";
+import { initialsOf } from "@/lib/initials";
 import { ThemeToggle } from "./theme-toggle";
 
 interface AppNavProps {
   userName: string;
   userEmail: string;
   userImage?: string | null;
+  userUsername?: string | null;
+  pendingShares?: number;
 }
 
-export default function AppNav({ userName, userEmail, userImage }: AppNavProps) {
+export default function AppNav({
+  userName,
+  userEmail,
+  userImage,
+  userUsername,
+  pendingShares = 0,
+}: AppNavProps) {
   const router = useRouter();
 
-  const initials = userName
-    .split(" ")
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const initials = initialsOf(userName);
 
   const handleSignOut = async () => {
     await signOut({
@@ -63,8 +66,12 @@ export default function AppNav({ userName, userEmail, userImage }: AppNavProps) 
               render={
                 <button
                   type="button"
-                  aria-label="Account menu"
-                  className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  aria-label={
+                    pendingShares > 0
+                      ? `Account menu, ${pendingShares} bills awaiting your response`
+                      : "Account menu"
+                  }
+                  className="relative rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <Avatar className="size-8">
                     {userImage ? (
@@ -74,6 +81,11 @@ export default function AppNav({ userName, userEmail, userImage }: AppNavProps) 
                       {initials || "?"}
                     </AvatarFallback>
                   </Avatar>
+                  {pendingShares > 0 && (
+                    <span className="absolute -top-1 -right-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground tabular-nums">
+                      {pendingShares > 9 ? "9+" : pendingShares}
+                    </span>
+                  )}
                 </button>
               }
             />
@@ -83,9 +95,29 @@ export default function AppNav({ userName, userEmail, userImage }: AppNavProps) 
                 <DropdownMenuLabel>
                   <div className="truncate font-medium">{userName}</div>
                   <div className="truncate text-xs font-normal text-muted-foreground">
-                    {userEmail}
+                    {userUsername ? `@${userUsername}` : userEmail}
                   </div>
                 </DropdownMenuLabel>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                {pendingShares > 0 && (
+                  <DropdownMenuItem render={<Link href="/dashboard" />}>
+                    <Inbox />
+                    Shared with you
+                    <span className="ml-auto flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground tabular-nums">
+                      {pendingShares > 9 ? "9+" : pendingShares}
+                    </span>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem render={<Link href="/profile" />}>
+                  <User />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem render={<Link href="/friends" />}>
+                  <Users />
+                  Friends
+                </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>

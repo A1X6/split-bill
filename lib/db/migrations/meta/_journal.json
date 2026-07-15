@@ -8,6 +8,41 @@
       "when": 1784058552128,
       "tag": "0000_salty_mephisto",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784068464995,
+      "tag": "0001_regular_baron_strucker",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784069221597,
+      "tag": "0002_fantastic_christian_walker",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784069763468,
+      "tag": "0003_broken_rawhide_kid",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784070782358,
+      "tag": "0004_outgoing_scalphunter",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784071802153,
+      "tag": "0005_cheerful_silver_surfer",
+      "breakpoints": true
     }
   ]
 }

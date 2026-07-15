@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { currencyDigits, currencyStep, formatMoney } from "@/lib/currency";
 import { ScanReceiptResult, Participant } from "@/lib/types";
 
 interface ReviewRow {
@@ -17,6 +18,7 @@ interface ScannedItemsReviewProps {
   users: Participant[];
   onAddItems: (items: { name: string; cost: number; quantity: number; users: string[] }[]) => void;
   onDismiss: () => void;
+  currency: string;
 }
 
 let rowCounter = 0;
@@ -27,12 +29,13 @@ export default function ScannedItemsReview({
   users,
   onAddItems,
   onDismiss,
+  currency,
 }: ScannedItemsReviewProps) {
   const [rows, setRows] = useState<ReviewRow[]>(() =>
     scan.items.map((item) => ({
       id: nextRowId(),
       name: item.name,
-      cost: item.price.toFixed(2),
+      cost: item.price.toFixed(currencyDigits(currency)),
       quantity: String(item.quantity),
       users: [],
     }))
@@ -133,8 +136,7 @@ export default function ScannedItemsReview({
             {" "}
             · receipt total{" "}
             <span className="font-mono tabular-nums">
-              {scan.currency ?? "$"}
-              {scan.total.toFixed(2)}
+              {formatMoney(scan.total, currency)}
             </span>
           </>
         )}{" "}
@@ -161,7 +163,7 @@ export default function ScannedItemsReview({
                   type="number"
                   value={row.cost}
                   onChange={(e) => updateRow(row.id, { cost: e.target.value })}
-                  step="0.01"
+                  step={currencyStep(currency)}
                   min="0"
                   placeholder="Cost"
                   aria-label="Cost"

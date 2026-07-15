@@ -14,8 +14,14 @@ export function proxy(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
   const { pathname } = request.nextUrl;
 
+  // Keep this list in sync with config.matcher below — both must name every
+  // protected prefix, or a route is silently unguarded at the edge.
   const isProtected =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/bills");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/bills") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/friends") ||
+    pathname.startsWith("/shared");
 
   if (!sessionCookie && isProtected) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -25,5 +31,11 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/bills/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/bills/:path*",
+    "/profile/:path*",
+    "/friends/:path*",
+    "/shared/:path*",
+  ],
 };

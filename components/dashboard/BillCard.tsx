@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Bill } from "@/lib/db/schema/bills";
 import { deleteBill } from "@/lib/actions/bills";
+import { formatMoney } from "@/lib/currency";
 import { calculateOverallTotal } from "@/lib/split";
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
@@ -61,7 +62,7 @@ export default function BillCard({ bill }: { bill: Bill }) {
           </p>
           <div className="flex items-baseline justify-between border-t border-dashed pt-2">
             <span className="font-mono text-lg font-bold tabular-nums">
-              ${total.toFixed(2)}
+              {formatMoney(total, bill.currency)}
             </span>
             <span className="text-xs text-muted-foreground">
               {dateFormatter.format(new Date(bill.updatedAt))}

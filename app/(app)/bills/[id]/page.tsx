@@ -4,7 +4,10 @@ import { z } from "zod";
 import BillEditor from "@/components/bill/BillEditor";
 import { db } from "@/lib/db";
 import { bills } from "@/lib/db/schema";
+import { getAcceptedFriends } from "@/lib/friends";
+import { listPaymentMethods } from "@/lib/payments";
 import { requireUser } from "@/lib/session";
+import { getBillShares } from "@/lib/shares";
 
 export default async function BillPage({
   params,
@@ -27,5 +30,21 @@ export default async function BillPage({
     notFound();
   }
 
-  return <BillEditor initialBill={bill} />;
+  // Fetched server-side so the editor can offer "Add from friends", pick a
+  // payment method, and show share statuses without a client waterfall.
+  const [friends, paymentMethods, shares] = await Promise.all([
+    getAcceptedFriends(user.id),
+    listPaymentMethods(user.id),
+    getBillShares(bill.id, user.id),
+  ]);
+
+  return (
+    <BillEditor
+      initialBill={bill}
+      currentUser={{ id: user.id, name: user.name, image: user.image ?? null }}
+      friends={friends}
+      paymentMethods={paymentMethods}
+      shares={shares}
+    />
+  );
 }

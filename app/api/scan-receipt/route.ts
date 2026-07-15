@@ -1,5 +1,6 @@
 import { ScannedItem, ScannedTax, ScanReceiptResult } from "@/lib/types";
 import { auth } from "@/lib/auth";
+import { normalizeCurrency } from "@/lib/currency";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -87,7 +88,11 @@ function normalizeResult(raw: unknown): {
   return {
     items,
     taxes,
-    currency: typeof obj.currency === "string" && obj.currency.trim() ? obj.currency.trim() : null,
+    // The model is asked for "a code or symbol" and answers with anything —
+    // "$", "egp", "EGP", junk. Only an ISO code may leave this route: the bill
+    // schema rejects everything else, and a rejected payload kills autosave.
+    currency:
+      typeof obj.currency === "string" ? normalizeCurrency(obj.currency) : null,
     total: toNumber(obj.total),
   };
 }

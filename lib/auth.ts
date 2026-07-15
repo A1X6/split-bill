@@ -1,6 +1,9 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { username } from "better-auth/plugins";
 import { db } from "./db";
+import { sendEmail } from "./email";
+import { resetPasswordEmail } from "./email/templates";
 
 // Google sign-in only activates once credentials are configured, so the app
 // still runs (email/password only) before the OAuth client is set up.
@@ -14,6 +17,19 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      const sent = await sendEmail({
+        to: user.email,
+        subject: "Reset your Split Bill password",
+        html: resetPasswordEmail({ name: user.name, url }),
+      });
+      // Without a verified Resend domain the email never arrives. Printing the
+      // link keeps the flow testable in development — but never in production,
+      // where logging a reset token would be a credential leak.
+      if (!sent && process.env.NODE_ENV !== "production") {
+        console.log(`[dev] Password reset link for ${user.email}: ${url}`);
+      }
+    },
   },
   socialProviders: googleConfigured
     ? {
@@ -23,4 +39,5 @@ export const auth = betterAuth({
         },
       }
     : {},
+  plugins: [username({ minUsernameLength: 3, maxUsernameLength: 24 })],
 });
